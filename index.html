@@ -555,7 +555,7 @@
         console.log('Loading OpenBI data from CSV...');
         
         // Fetch Index CSV
-        const proxyUrl = 'https://api.allorigins.win/raw?url=';
+        const proxyUrl = 'https://corsproxy.io/?';
         const indexResponse = await fetch(proxyUrl + encodeURIComponent(CONFIG.OPENBI_INDEX_URL));
         const indexCsv = await indexResponse.text();
         const indexRows = parseCSV(indexCsv);
@@ -582,7 +582,7 @@
         
         for (const m of months) {
           try {
-            const monthResponse = await fetch(proxyUrl + encodeURIComponent(m.url + '&key=' + CONFIG.API_KEY));
+            const monthResponse = await fetch(proxyUrl + encodeURIComponent(m.url));
             const monthCsv = await monthResponse.text();
             const monthRows = parseCSV(monthCsv);
             const data = parseMonthData(monthRows);
