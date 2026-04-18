@@ -416,17 +416,9 @@
       
       <div class="sidebar-section">
         <div class="sidebar-section-title">門店</div>
-        <div class="sidebar-item" onclick="selectStore('MV', this)">
+        <div class="sidebar-item" onclick="showSection('stores', this)">
           <span class="sidebar-item-icon">🏪</span>
-          <span>Mid Valley</span>
-        </div>
-        <div class="sidebar-item" onclick="selectStore('KD', this)">
-          <span class="sidebar-item-icon">🏪</span>
-          <span>Kota Damansara</span>
-        </div>
-        <div class="sidebar-item" onclick="selectStore('SP', this)">
-          <span class="sidebar-item-icon">🏪</span>
-          <span>Sri Petaling</span>
+          <span>門店管理</span>
         </div>
       </div>
     </aside>
@@ -492,64 +484,128 @@
         </div>
       </div>
       
-      <!-- Content Grid -->
-      <div class="content-grid">
-        <!-- Main Chart -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">銷售趨勢分析</div>
-            <div class="card-actions">
-              <button class="tab-btn active">週</button>
-              <button class="tab-btn">月</button>
-              <button class="tab-btn">年</button>
+      <!-- Overview Section -->
+      <div id="overview-section" class="content-section">
+        <!-- Content Grid -->
+        <div class="content-grid">
+          <!-- Main Chart -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">銷售趨勢分析</div>
+              <div class="card-actions">
+                <button class="tab-btn active">週</button>
+                <button class="tab-btn">月</button>
+                <button class="tab-btn">年</button>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="mainChart"></canvas>
             </div>
           </div>
-          <div class="chart-container">
-            <canvas id="mainChart"></canvas>
+          
+          <!-- Store Performance Summary -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">門店表現概覽</div>
+              <button class="btn" onclick="showSection('stores', document.querySelector('.sidebar-item:nth-child(5)'))">查看全部 →</button>
+            </div>
+            <div class="store-list">
+              <div class="store-item">
+                <div class="store-icon" style="background: rgba(99, 102, 241, 0.1);">MV</div>
+                <div class="store-info">
+                  <div class="store-name">Mid Valley</div>
+                  <div class="store-value">RM 150,000</div>
+                </div>
+                <div class="store-trend up">+12%</div>
+              </div>
+              
+              <div class="store-item">
+                <div class="store-icon" style="background: rgba(16, 185, 129, 0.1);">KD</div>
+                <div class="store-info">
+                  <div class="store-name">Kota Damansara</div>
+                  <div class="store-value">RM 95,000</div>
+                </div>
+                <div class="store-trend up">+8%</div>
+              </div>
+              
+              <div class="store-item">
+                <div class="store-icon" style="background: rgba(245, 158, 11, 0.1);">SP</div>
+                <div class="store-info">
+                  <div class="store-name">Sri Petaling</div>
+                  <div class="store-value">RM 78,000</div>
+                </div>
+                <div class="store-trend down">-3%</div>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <!-- Store Performance -->
+      </div>
+      
+      <!-- Stores Section -->
+      <div id="stores-section" class="content-section" style="display: none;">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">門店表現</div>
+            <div class="card-title">🏪 門店管理</div>
           </div>
-          <div class="store-list">
-            <div class="store-item active" onclick="selectStore('MV', this)">
-              <div class="store-icon" style="background: rgba(99, 102, 241, 0.1);">MV</div>
-              <div class="store-info">
-                <div class="store-name">Mid Valley</div>
-                <div class="store-value">RM 150,000</div>
+          
+          <!-- Store Selector -->
+          <div class="store-selector" style="margin-bottom: 24px;">
+            <button class="store-btn active" onclick="selectStoreDetail('ALL', this)">全部門店</button>
+            <button class="store-btn" onclick="selectStoreDetail('MV', this)">Mid Valley</button>
+            <button class="store-btn" onclick="selectStoreDetail('KD', this)">Kota Damansara</button>
+            <button class="store-btn" onclick="selectStoreDetail('SP', this)">Sri Petaling</button>
+            <button class="store-btn" onclick="selectStoreDetail('PI', this)">Pandan Indah</button>
+            <button class="store-btn" onclick="selectStoreDetail('PP', this)">Pearl Point</button>
+            <button class="store-btn" onclick="selectStoreDetail('KP', this)">Kepong</button>
+            <button class="store-btn" onclick="selectStoreDetail('OFK', this)">Old Fatt Kee</button>
+            <button class="store-btn" onclick="selectStoreDetail('PVL', this)">PVL</button>
+            <button class="store-btn" onclick="selectStoreDetail('SS15', this)">SS15</button>
+          </div>
+          
+          <!-- Store Detail -->
+          <div id="storeDetailCard" style="display: none;">
+            <div class="kpi-grid" style="margin-bottom: 24px;">
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <div class="kpi-title">總銷售額</div>
+                </div>
+                <div class="kpi-value" id="storeTotalSales">-</div>
               </div>
-              <div class="store-trend up">+12%</div>
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <div class="kpi-title">月均銷售</div>
+                </div>
+                <div class="kpi-value" id="storeAvgSales">-</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <div class="kpi-title">環比變化</div>
+                </div>
+                <div class="kpi-value" id="storeChange">-</div>
+              </div>
             </div>
             
-            <div class="store-item" onclick="selectStore('KD', this)">
-              <div class="store-icon" style="background: rgba(16, 185, 129, 0.1);">KD</div>
-              <div class="store-info">
-                <div class="store-name">Kota Damansara</div>
-                <div class="store-value">RM 95,000</div>
-              </div>
-              <div class="store-trend up">+8%</div>
+            <div class="chart-container small">
+              <canvas id="storeTrendChart"></canvas>
             </div>
-            
-            <div class="store-item" onclick="selectStore('SP', this)">
-              <div class="store-icon" style="background: rgba(245, 158, 11, 0.1);">SP</div>
-              <div class="store-info">
-                <div class="store-name">Sri Petaling</div>
-                <div class="store-value">RM 78,000</div>
-              </div>
-              <div class="store-trend down">-3%</div>
-            </div>
-            
-            <div class="store-item" onclick="selectStore('PI', this)">
-              <div class="store-icon" style="background: rgba(239, 68, 68, 0.1);">PI</div>
-              <div class="store-info">
-                <div class="store-name">Pandan Indah</div>
-                <div class="store-value">RM 52,000</div>
-              </div>
-              <div class="store-trend up">+5%</div>
-            </div>
+          </div>
+          
+          <!-- All Stores Table -->
+          <div id="allStoresTable">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color);">
+                  <th style="text-align: left; padding: 12px;">門店</th>
+                  <th style="text-align: right; padding: 12px;">本月銷售</th>
+                  <th style="text-align: right; padding: 12px;">上月銷售</th>
+                  <th style="text-align: right; padding: 12px;">變化</th>
+                  <th style="text-align: right; padding: 12px;">佔比</th>
+                </tr>
+              </thead>
+              <tbody id="storesTableBody">
+                <!-- Dynamic content -->
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -639,13 +695,138 @@
     
     // Navigation
     function showSection(section, clickedElement) {
+      // Update sidebar active state
       document.querySelectorAll('.sidebar-item').forEach(item => {
         item.classList.remove('active');
       });
       if (clickedElement) {
         clickedElement.classList.add('active');
       }
+      
+      // Hide all sections
+      document.querySelectorAll('.content-section').forEach(sec => {
+        sec.style.display = 'none';
+      });
+      
+      // Show selected section
+      if (section === 'overview') {
+        document.getElementById('overview-section').style.display = 'block';
+      } else if (section === 'stores') {
+        document.getElementById('stores-section').style.display = 'block';
+        renderStoresTable();
+      }
+      
       console.log('Section:', section);
+    }
+    
+    // Store detail selection
+    function selectStoreDetail(storeCode, clickedElement) {
+      // Update button styles
+      document.querySelectorAll('.store-selector .store-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      if (clickedElement) {
+        clickedElement.classList.add('active');
+      }
+      
+      const detailCard = document.getElementById('storeDetailCard');
+      const tableDiv = document.getElementById('allStoresTable');
+      
+      if (storeCode === 'ALL') {
+        detailCard.style.display = 'none';
+        tableDiv.style.display = 'block';
+      } else {
+        detailCard.style.display = 'block';
+        tableDiv.style.display = 'none';
+        
+        // Update store detail with mock data
+        const storeData = {
+          'MV': { total: 'RM 450K', avg: 'RM 150K', change: '+12%', trend: [140000, 155000, 150000] },
+          'KD': { total: 'RM 285K', avg: 'RM 95K', change: '+8%', trend: [88000, 100000, 95000] },
+          'SP': { total: 'RM 234K', avg: 'RM 78K', change: '-3%', trend: [82000, 75000, 78000] },
+          'PI': { total: 'RM 156K', avg: 'RM 52K', change: '+5%', trend: [48000, 52000, 52000] },
+          'PP': { total: 'RM 150K', avg: 'RM 50K', change: '0%', trend: [50000, 50000, 50000] }
+        };
+        
+        const data = storeData[storeCode] || storeData['MV'];
+        document.getElementById('storeTotalSales').textContent = data.total;
+        document.getElementById('storeAvgSales').textContent = data.avg;
+        document.getElementById('storeChange').textContent = data.change;
+        document.getElementById('storeChange').style.color = data.change.includes('+') ? 'var(--success)' : (data.change.includes('-') ? 'var(--danger)' : 'var(--text-secondary)');
+        
+        // Render trend chart
+        renderStoreTrendChart(data.trend);
+      }
+    }
+    
+    // Render stores table
+    function renderStoresTable() {
+      const tbody = document.getElementById('storesTableBody');
+      const stores = [
+        { name: 'Mid Valley', code: 'MV', current: 150000, previous: 134000, change: '+12%', share: '37%' },
+        { name: 'Kota Damansara', code: 'KD', current: 95000, previous: 88000, change: '+8%', share: '23%' },
+        { name: 'Sri Petaling', code: 'SP', current: 78000, previous: 80000, change: '-3%', share: '19%' },
+        { name: 'Pandan Indah', code: 'PI', current: 52000, previous: 49000, change: '+5%', share: '13%' },
+        { name: 'Pearl Point', code: 'PP', current: 30000, previous: 30000, change: '0%', share: '8%' }
+      ];
+      
+      tbody.innerHTML = stores.map(s => `
+        <tr style="border-bottom: 1px solid var(--border-color);">
+          <td style="padding: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 32px; height: 32px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">${s.code}</div>
+              <span>${s.name}</span>
+            </div>
+          </td>
+          <td style="text-align: right; padding: 12px; font-weight: 600;">RM ${s.current.toLocaleString()}</td>
+          <td style="text-align: right; padding: 12px; color: var(--text-secondary);">RM ${s.previous.toLocaleString()}</td>
+          <td style="text-align: right; padding: 12px; color: ${s.change.includes('+') ? 'var(--success)' : (s.change.includes('-') ? 'var(--danger)' : 'var(--text-secondary)')}; font-weight: 600;">${s.change}</td>
+          <td style="text-align: right; padding: 12px; color: var(--text-secondary);">${s.share}</td>
+        </tr>
+      `).join('');
+    }
+    
+    // Render store trend chart
+    function renderStoreTrendChart(data) {
+      const canvas = document.getElementById('storeTrendChart');
+      if (!canvas) return;
+      
+      // Destroy existing chart
+      if (canvas.chart) {
+        canvas.chart.destroy();
+      }
+      
+      const ctx = canvas.getContext('2d');
+      canvas.chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['2月', '3月', '4月'],
+          datasets: [{
+            label: '銷售額',
+            data: data,
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return 'RM ' + (value / 1000) + 'K';
+                }
+              }
+            }
+          }
+        }
+      });
     }
     
     function selectStore(store, clickedElement) {
