@@ -430,8 +430,8 @@
   <script>
     // Configuration
     const CONFIG = {
-      // OpenBI - Google Sheet Index
-      OPENBI_INDEX_URL: 'https://docs.google.com/spreadsheets/d/1Gu-Z1V_3sfOE6pWIGd8Hlg--RfWkBlLhDikQmU1g1Pk/export?format=csv',
+      // OpenBI - GAS Proxy
+      OPENBI_PROXY_URL: 'https://script.google.com/macros/s/AKfycbxIeRdDJk5BCGTPTBDP9y_OyMqkdUsGJqbDiJY3jzDYBrOTYdV8FCclYNwEaxpZDr2qZw/exec',
       
       // CRM - Google Apps Script
       CRM_GAS_URL: 'https://script.google.com/macros/s/AKfycbx1UigsYc4frBMlqE0L5a-PaIOs5kTGzxaXqt-cniv8_3qIVH_N24swId6y-aZeVLCUcg/exec',
@@ -475,45 +475,106 @@
       try {
         console.log('Loading OpenBI data...');
         
-        // Try direct fetch first
-        let csvText;
-        try {
-          const response = await fetch(CONFIG.OPENBI_INDEX_URL, { 
-            redirect: 'follow',
-            mode: 'cors'
-          });
-          csvText = await response.text();
-          console.log('Direct fetch successful');
-        } catch (directError) {
-          console.log('Direct fetch failed, trying proxy...');
-          const proxyUrl = 'https://api.allorigins.win/raw?url=';
-          const response = await fetch(proxyUrl + encodeURIComponent(CONFIG.OPENBI_INDEX_URL));
-          csvText = await response.text();
+        // Use GAS Proxy to get all data
+        const proxyUrl = 'https://api.allorigins.win/raw?url=';
+        const targetUrl = CONFIG.OPENBI_PROXY_URL + '?action=all&key=' + CONFIG.API_KEY;
+        
+        const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
+        const result = await response.json();
+        
+        console.log('API Response:', result);
+        
+        if (!result.success) {
+          throw new Error(result.error || 'API Error');
         }
         
-        console.log('CSV text length:', csvText.length);
+        const data = result.data;
         
-        // Parse Index CSV
-        const lines = csvText.trim().split('\n');
-        console.log('CSV lines:', lines.length);
+        // Update KPIs
+        document.getElementById('openbi-sales').textContent = formatMoney(data.total);
+        document.getElementById('openbi-stores').textContent = Object.keys(data.stores).length + ' 間';
+        document.getElementById('openbi-daily').textContent = data.months.length > 0 ? formatMoney(data.total / (data.months.length * 30)) : 'RM 0';
+        document.getElementById('openbi-months').textContent = data.months.length + ' 個月';
         
-        const months = [];
+        // Render charts
+        renderOpenBICharts(data.months, data.stores);
         
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',');
-          if (cols.length >= 3 && cols[0] && cols[1]) {
-            months.push({
-              year: cols[0].trim(),
-              month: cols[1].trim(),
-              url: cols[2].trim()
-            });
+      } catch (error) {
+        console.error('OpenBI load error:', error);
+        document.getElementById('openbi-sales').innerHTML = '<span style="color: red;">錯誤: ' + error.message + '</span>';
+        showOpenBIError();
+      }
+    }
+    
+    // Keep old function for reference but don't use
+    async function loadOpenBIDataOld() {
+      // This is the old implementation that doesn't work due to CORS
+      console.log('Using old method (deprecated)');
+    }
+    
+    // Render OpenBI Charts
+    function renderOpenBICharts(months, storeTotals) {
+      // Sort by month order
+      const monthOrder = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      months.sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
+      
+      // Main chart
+      const ctx = document.getElementById('openbiChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: months.map(d => d.month),
+          datasets: [{
+            label: '銷售額 (RM)',
+            data: months.map(d => d.total),
+            backgroundColor: '#6366f1'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: v => 'RM ' + v.toLocaleString()
+              }
+            }
           }
         }
-        
-        console.log('Found months:', months);
-        
-        // Use ALL available months (no filter)
-        const validMonths = months;
+      });
+      
+      // Pie chart
+      const pieCtx = document.getElementById('storePieChart').getContext('2d');
+      new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(storeTotals),
+          datasets: [{
+            data: Object.values(storeTotals),
+            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+    
+    function showOpenBIError() {
+      document.getElementById('openbi-sales').textContent = 'RM 0';
+      document.getElementById('openbi-stores').textContent = '0 間';
+      document.getElementById('openbi-daily').textContent = 'RM 0';
+      document.getElementById('openbi-months').textContent = '0 個月';
+    }
+    
+    // Remove old functions
+    /*
+    async function fetchMonthSales(url) {
+      // Deprecated - now handled by GAS proxy
+    }
+    */
         
         // Fetch data for each month
         const monthlyData = [];
