@@ -133,8 +133,15 @@
     /* Chart Container */
     .chart-container {
       position: relative;
-      height: 300px;
+      height: 250px;
+      max-height: 250px;
       margin-top: 15px;
+    }
+    
+    /* Store Trend Chart Container */
+    #storeTrendCard .chart-container {
+      height: 200px;
+      max-height: 200px;
     }
     
     /* Table */
@@ -858,16 +865,21 @@
         return;
       }
       
+      // Create chart container with fixed height
+      const chartContainer = document.createElement('div');
+      chartContainer.className = 'chart-container';
+      chartContainer.style.height = '200px';
+      
       // Create new canvas
       const canvas = document.createElement('canvas');
       canvas.id = 'storeTrendChart';
-      canvas.style.height = '250px';
+      chartContainer.appendChild(canvas);
       
       const card = document.createElement('div');
       card.id = 'storeTrendCard';
       card.className = 'card';
       card.innerHTML = `<div class="card-title">📈 ${STORE_NAMES[storeCode]} 月度趨勢</div>`;
-      card.appendChild(canvas);
+      card.appendChild(chartContainer);
       
       // Insert after store detail card
       const storeDetailCard = document.getElementById('storeDetailCard');
@@ -877,19 +889,21 @@
         storeDetailCard.parentNode.appendChild(card);
       }
       
-      // Render chart
+      // Render chart with compact options
       const ctx = canvas.getContext('2d');
       new Chart(ctx, {
         type: 'line',
         data: {
           labels: storeData.map(d => d.month),
           datasets: [{
-            label: '銷售額 (RM)',
+            label: '銷售額',
             data: storeData.map(d => d.sales),
             borderColor: '#667eea',
             backgroundColor: 'rgba(102, 126, 234, 0.1)',
             tension: 0.4,
-            fill: true
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6
           }]
         },
         options: {
@@ -908,21 +922,25 @@
           scales: {
             y: {
               beginAtZero: true,
-              title: {
-                display: true,
-                text: '銷售額 (RM)'
-              },
               ticks: {
+                font: { size: 11 },
                 callback: function(value) {
-                  return 'RM ' + value.toLocaleString();
+                  return 'RM ' + (value / 1000) + 'K';
                 }
               }
             },
             x: {
-              title: {
-                display: true,
-                text: '月份'
+              ticks: {
+                font: { size: 11 }
               }
+            }
+          },
+          layout: {
+            padding: {
+              top: 10,
+              bottom: 10,
+              left: 10,
+              right: 10
             }
           }
         }
