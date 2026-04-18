@@ -473,12 +473,30 @@
     // Load OpenBI Data
     async function loadOpenBIData() {
       try {
-        const proxyUrl = 'https://api.allorigins.win/raw?url=';
-        const response = await fetch(proxyUrl + encodeURIComponent(CONFIG.OPENBI_INDEX_URL));
-        const csvText = await response.text();
+        console.log('Loading OpenBI data...');
+        
+        // Try direct fetch first
+        let csvText;
+        try {
+          const response = await fetch(CONFIG.OPENBI_INDEX_URL, { 
+            redirect: 'follow',
+            mode: 'cors'
+          });
+          csvText = await response.text();
+          console.log('Direct fetch successful');
+        } catch (directError) {
+          console.log('Direct fetch failed, trying proxy...');
+          const proxyUrl = 'https://api.allorigins.win/raw?url=';
+          const response = await fetch(proxyUrl + encodeURIComponent(CONFIG.OPENBI_INDEX_URL));
+          csvText = await response.text();
+        }
+        
+        console.log('CSV text length:', csvText.length);
         
         // Parse Index CSV
         const lines = csvText.trim().split('\n');
+        console.log('CSV lines:', lines.length);
+        
         const months = [];
         
         for (let i = 1; i < lines.length; i++) {
@@ -492,9 +510,10 @@
           }
         }
         
-        // Only use available months (JAN, FEB, MAR based on your data)
-        const availableMonths = ['JAN', 'FEB', 'MAR'];
-        const validMonths = months.filter(m => availableMonths.includes(m.month));
+        console.log('Found months:', months);
+        
+        // Use ALL available months (no filter)
+        const validMonths = months;
         
         // Fetch data for each month
         const monthlyData = [];
@@ -532,14 +551,28 @@
         
       } catch (error) {
         console.error('OpenBI load error:', error);
+        document.getElementById('openbi-sales').innerHTML = '<span style="color: red;">錯誤: ' + error.message + '</span>';
         showOpenBIError();
       }
     }
     
     async function fetchMonthSales(url) {
-      const proxyUrl = 'https://api.allorigins.win/raw?url=';
-      const response = await fetch(proxyUrl + encodeURIComponent(url + '&key=' + CONFIG.API_KEY));
-      const csvText = await response.text();
+      console.log('Fetching month:', url);
+      
+      let csvText;
+      try {
+        const response = await fetch(url + '&key=' + CONFIG.API_KEY, {
+          redirect: 'follow',
+          mode: 'cors'
+        });
+        csvText = await response.text();
+      } catch (e) {
+        const proxyUrl = 'https://api.allorigins.win/raw?url=';
+        const response = await fetch(proxyUrl + encodeURIComponent(url + '&key=' + CONFIG.API_KEY));
+        csvText = await response.text();
+      }
+      
+      console.log('Month data length:', csvText.length);
       
       const lines = csvText.trim().split('\n');
       if (lines.length < 4) return { total: 0, stores: {} };
