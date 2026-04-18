@@ -509,10 +509,19 @@
       }
     }
     
-    // Fetch OpenBI data - 使用現有的3個月數據
+    // Fetch OpenBI data - 使用緩存機制
     async function fetchOpenBIData() {
+      const now = Date.now();
+      
+      // 檢查緩存是否有效
+      if (dataCache && (now - lastFetchTime) < CACHE_DURATION) {
+        console.log('Using cached data');
+        return dataCache;
+      }
+      
       try {
-        // 使用 CORS Proxy 或直接在 Cloudflare Pages 上運行
+        console.log('Fetching fresh data...');
+        // 使用 CORS Proxy
         const proxyUrl = 'https://api.allorigins.win/raw?url=';
         const response = await fetch(proxyUrl + encodeURIComponent(CONFIG.OPENBI_INDEX_URL));
         const csvText = await response.text();
@@ -576,17 +585,34 @@
           }
         }
         
-        return {
+        // 保存到緩存
+        dataCache = {
           monthlyData,
           totalSales,
           salesChange,
           storeBreakdown
         };
+        lastFetchTime = now;
+        
+        console.log('Data cached successfully');
+        return dataCache;
       } catch (error) {
         console.error('Fetch OpenBI data error:', error);
+        // 如果有緩存，返回緩存數據
+        if (dataCache) {
+          console.log('Returning cached data due to error');
+          return dataCache;
+        }
         // 返回模擬數據作為備用
         return fetchMockOpenBIData();
       }
+    }
+    
+    // 手動清除緩存（用於調試）
+    function clearCache() {
+      dataCache = null;
+      lastFetchTime = 0;
+      console.log('Cache cleared');
     }
     
     // 模擬數據（當真實數據無法加載時）
@@ -744,6 +770,9 @@
     // ============ OpenBI ============
     let currentStoreData = null;
     let selectedStore = 'ALL';
+    let dataCache = null; // 數據緩存
+    let lastFetchTime = 0;
+    const CACHE_DURATION = 5 * 60 * 1000; // 緩存 5 分鐘
     
     const STORE_NAMES = {
       'MV': 'Mid Valley',
@@ -797,18 +826,22 @@
       card.style.display = 'block';
       title.textContent = `🏪 ${STORE_NAMES[storeCode]} 詳細數據`;
       
-      // Debug: log current data
-      console.log('Current store data:', currentStoreData);
-      console.log('Selected store:', storeCode);
+      // 使用緩存的數據
+      const dataToUse = currentStoreData || dataCache;
       
-      // Get store data from current data
+      if (!dataToUse) {
+        console.warn('No data available');
+        kpiGrid.innerHTML = '<div class="kpi-card"><div class="kpi-value">-</div><div class="kpi-label">加載中...</div></div>';
+        return;
+      }
+      
+      // Get store data from cached data
       let storeData = [];
       let totalSales = 0;
       
-      if (currentStoreData && currentStoreData.monthlyData) {
+      if (dataToUse && dataToUse.monthlyData) {
         // Extract data for this store across months
-        currentStoreData.monthlyData.forEach(month => {
-          console.log('Month:', month.month, 'Stores:', month.stores);
+        dataToUse.monthlyData.forEach(month => {
           if (month.stores && month.stores[storeCode]) {
             storeData.push({
               month: month.month,
@@ -818,8 +851,6 @@
           }
         });
       }
-      
-      console.log('Extracted store data:', storeData);
       
       // Calculate average and change
       const avgSales = storeData.length > 0 ? totalSales / storeData.length : 0;
