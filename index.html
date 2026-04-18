@@ -194,6 +194,34 @@
       background: #5a6fd6;
     }
     
+    /* Store Selector */
+    .store-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .store-btn {
+      padding: 10px 16px;
+      border: 2px solid #e0e0e0;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    
+    .store-btn:hover {
+      border-color: #667eea;
+      color: #667eea;
+    }
+    
+    .store-btn.active {
+      background: #667eea;
+      border-color: #667eea;
+      color: white;
+    }
+    
     /* Loading */
     .loading {
       text-align: center;
@@ -288,6 +316,31 @@
     
     <!-- OpenBI Section -->
     <section id="openbi" class="section">
+      <!-- Store Selector -->
+      <div class="card">
+        <div class="card-title">🏪 選擇門店查看詳細數據</div>
+        <div class="store-selector">
+          <button class="store-btn active" onclick="selectStore('ALL')">全部門店</button>
+          <button class="store-btn" onclick="selectStore('MV')">Mid Valley</button>
+          <button class="store-btn" onclick="selectStore('KD')">Kota Damansara</button>
+          <button class="store-btn" onclick="selectStore('SP')">Sri Petaling</button>
+          <button class="store-btn" onclick="selectStore('PI')">Pandan Indah</button>
+          <button class="store-btn" onclick="selectStore('PP')">Pearl Point</button>
+          <button class="store-btn" onclick="selectStore('KP')">Kepong</button>
+          <button class="store-btn" onclick="selectStore('OFK')">Old Fatt Kee</button>
+          <button class="store-btn" onclick="selectStore('PVL')">PVL</button>
+          <button class="store-btn" onclick="selectStore('SS15')">SS15</button>
+        </div>
+      </div>
+      
+      <!-- Store Detail Card -->
+      <div class="card" id="storeDetailCard" style="display: none;">
+        <div class="card-title" id="storeDetailTitle">門店詳細數據</div>
+        <div class="kpi-grid" id="storeKpiGrid">
+          <!-- Dynamic KPIs will be inserted here -->
+        </div>
+      </div>
+      
       <div class="card">
         <div class="card-title">📊 月份銷售對比</div>
         <div class="chart-container">
@@ -430,6 +483,7 @@
         // 只取現有的3個月
         const monthlyData = [];
         let totalSales = 0;
+        const storeBreakdown = {};
         
         for (const item of data) {
           if (CONFIG.AVAILABLE_MONTHS.includes(`${item.year}-${item.month}`)) {
@@ -438,9 +492,15 @@
               monthlyData.push({
                 month: item.month,
                 sales: monthData.total,
-                year: item.year
+                year: item.year,
+                stores: monthData.stores
               });
               totalSales += monthData.total;
+              
+              // Aggregate store breakdown
+              for (const [store, sales] of Object.entries(monthData.stores)) {
+                storeBreakdown[store] = (storeBreakdown[store] || 0) + sales;
+              }
             } catch (e) {
               console.warn('Failed to load month:', item.month);
             }
@@ -466,7 +526,8 @@
         return {
           monthlyData,
           totalSales,
-          salesChange
+          salesChange,
+          storeBreakdown
         };
       } catch (error) {
         console.error('Fetch OpenBI data error:', error);
@@ -478,9 +539,24 @@
     // 模擬數據（當真實數據無法加載時）
     function fetchMockOpenBIData() {
       const monthlyData = [
-        { month: 'FEB', sales: 125000, year: '2026' },
-        { month: 'MAR', sales: 142000, year: '2026' },
-        { month: 'APR', sales: 138000, year: '2026' }
+        { 
+          month: 'FEB', 
+          sales: 125000, 
+          year: '2026',
+          stores: { 'MV': 45000, 'KD': 28000, 'SP': 22000, 'PI': 15000, 'PP': 15000 }
+        },
+        { 
+          month: 'MAR', 
+          sales: 142000, 
+          year: '2026',
+          stores: { 'MV': 52000, 'KD': 32000, 'SP': 25000, 'PI': 18000, 'PP': 15000 }
+        },
+        { 
+          month: 'APR', 
+          sales: 138000, 
+          year: '2026',
+          stores: { 'MV': 48000, 'KD': 30000, 'SP': 26000, 'PI': 19000, 'PP': 15000 }
+        }
       ];
       
       const totalSales = monthlyData.reduce((sum, m) => sum + m.sales, 0);
@@ -488,46 +564,70 @@
       const previous = monthlyData[monthlyData.length - 2].sales;
       const salesChange = ((current - previous) / previous) * 100;
       
-      return { monthlyData, totalSales, salesChange };
+      // Calculate store breakdown
+      const storeBreakdown = {};
+      monthlyData.forEach(m => {
+        for (const [store, sales] of Object.entries(m.stores)) {
+          storeBreakdown[store] = (storeBreakdown[store] || 0) + sales;
+        }
+      });
+      
+      return { monthlyData, totalSales, salesChange, storeBreakdown };
     }
     
-    // Fetch individual month data
+    // Fetch individual month data with store breakdown
     async function fetchMonthData(url) {
       try {
         const proxyUrl = 'https://api.allorigins.win/raw?url=';
         const response = await fetch(proxyUrl + encodeURIComponent(url + '&key=' + CONFIG.API_KEY));
         const csvText = await response.text();
         
-        // Parse CSV and sum Nett columns
+        // Parse CSV
         const lines = csvText.trim().split('\n');
-        if (lines.length < 4) return { total: 0 };
+        if (lines.length < 4) return { total: 0, stores: {} };
         
-        const headerRow = lines[3].split(',');
+        const storeRow = lines[1].split(',');  // Store names
+        const headerRow = lines[3].split(','); // Headers (Nett, etc.)
         
-        // Find Nett column indices
-        const nettIndices = [];
-        headerRow.forEach((col, idx) => {
-          if (col.trim() === 'Nett') {
-            nettIndices.push(idx);
+        // Find store columns and their Nett indices
+        const storeNettMap = {};
+        let currentStore = null;
+        
+        for (let i = 0; i < storeRow.length; i++) {
+          const cell = storeRow[i]?.trim();
+          if (cell && cell.startsWith('SALES ')) {
+            currentStore = cell.replace('SALES ', '');
           }
-        });
-        
-        // Sum all Nett values
-        let total = 0;
-        for (let i = 4; i < lines.length; i++) {
-          const cols = lines[i].split(',');
-          nettIndices.forEach(idx => {
-            if (cols[idx]) {
-              const val = parseFloat(cols[idx].replace(/"/g, '')) || 0;
-              total += val;
+          if (currentStore && headerRow[i]?.trim() === 'Nett') {
+            if (!storeNettMap[currentStore]) {
+              storeNettMap[currentStore] = [];
             }
-          });
+            storeNettMap[currentStore].push(i);
+          }
         }
         
-        return { total };
+        // Sum sales by store
+        const stores = {};
+        let total = 0;
+        
+        for (let i = 4; i < lines.length; i++) {
+          const cols = lines[i].split(',');
+          
+          for (const [store, indices] of Object.entries(storeNettMap)) {
+            indices.forEach(idx => {
+              if (cols[idx]) {
+                const val = parseFloat(cols[idx].replace(/"/g, '').replace(/,/g, '')) || 0;
+                stores[store] = (stores[store] || 0) + val;
+                total += val;
+              }
+            });
+          }
+        }
+        
+        return { total, stores };
       } catch (error) {
         console.error('Fetch month data error:', error);
-        return { total: 0 };
+        return { total: 0, stores: {} };
       }
     }
     
@@ -572,38 +672,215 @@
     }
     
     // ============ OpenBI ============
+    let currentStoreData = null;
+    let selectedStore = 'ALL';
+    
+    const STORE_NAMES = {
+      'MV': 'Mid Valley',
+      'KD': 'Kota Damansara',
+      'SP': 'Sri Petaling',
+      'PI': 'Pandan Indah',
+      'PP': 'Pearl Point',
+      'KP': 'Kepong',
+      'OFK': 'Old Fatt Kee',
+      'PVL': 'PVL',
+      'SS15': 'SS15'
+    };
+    
     async function loadOpenBIData() {
-      // Render sales comparison chart
-      const salesCtx = document.getElementById('salesChart').getContext('2d');
-      new Chart(salesCtx, {
-        type: 'bar',
+      // Load real data first
+      const openbiData = await fetchOpenBIData();
+      currentStoreData = openbiData;
+      
+      // Render charts with real data
+      renderSalesChart(openbiData.monthlyData);
+      renderStoreChart(openbiData.storeBreakdown);
+      
+      // If a store is selected, show its details
+      if (selectedStore !== 'ALL') {
+        showStoreDetail(selectedStore);
+      }
+    }
+    
+    function selectStore(storeCode) {
+      selectedStore = storeCode;
+      
+      // Update button styles
+      document.querySelectorAll('.store-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      // Show/hide store detail
+      if (storeCode === 'ALL') {
+        document.getElementById('storeDetailCard').style.display = 'none';
+      } else {
+        showStoreDetail(storeCode);
+      }
+    }
+    
+    function showStoreDetail(storeCode) {
+      const card = document.getElementById('storeDetailCard');
+      const title = document.getElementById('storeDetailTitle');
+      const kpiGrid = document.getElementById('storeKpiGrid');
+      
+      card.style.display = 'block';
+      title.textContent = `🏪 ${STORE_NAMES[storeCode]} 詳細數據`;
+      
+      // Get store data from current data
+      let storeData = [];
+      let totalSales = 0;
+      
+      if (currentStoreData && currentStoreData.storeBreakdown) {
+        // Extract data for this store across months
+        currentStoreData.monthlyData.forEach(month => {
+          if (month.stores && month.stores[storeCode]) {
+            storeData.push({
+              month: month.month,
+              sales: month.stores[storeCode]
+            });
+            totalSales += month.stores[storeCode];
+          }
+        });
+      }
+      
+      // Calculate average and change
+      const avgSales = storeData.length > 0 ? totalSales / storeData.length : 0;
+      let salesChange = 0;
+      if (storeData.length >= 2) {
+        const current = storeData[storeData.length - 1].sales;
+        const previous = storeData[storeData.length - 2].sales;
+        if (previous > 0) {
+          salesChange = ((current - previous) / previous) * 100;
+        }
+      }
+      
+      // Render KPIs
+      kpiGrid.innerHTML = `
+        <div class="kpi-card">
+          <div class="kpi-value">RM ${totalSales.toLocaleString()}</div>
+          <div class="kpi-label">總銷售額</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value">RM ${Math.round(avgSales).toLocaleString()}</div>
+          <div class="kpi-label">月均銷售</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value" style="color: ${salesChange >= 0 ? '#10b981' : '#ef4444'}">${salesChange >= 0 ? '+' : ''}${salesChange.toFixed(1)}%</div>
+          <div class="kpi-label">環比變化</div>
+        </div>
+      `;
+      
+      // Render store trend chart
+      renderStoreTrendChart(storeCode, storeData);
+    }
+    
+    function renderStoreTrendChart(storeCode, storeData) {
+      // Remove existing chart if any
+      const existingCanvas = document.getElementById('storeTrendChart');
+      if (existingCanvas) {
+        existingCanvas.remove();
+      }
+      
+      // Create new canvas
+      const canvas = document.createElement('canvas');
+      canvas.id = 'storeTrendChart';
+      canvas.style.height = '250px';
+      
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<div class="card-title">📈 ${STORE_NAMES[storeCode]} 月度趨勢</div>`;
+      card.appendChild(canvas);
+      
+      document.getElementById('storeDetailCard').after(card);
+      
+      // Render chart
+      const ctx = canvas.getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
         data: {
-          labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+          labels: storeData.map(d => d.month),
           datasets: [{
-            label: '2026年',
-            data: [120000, 135000, 128000, 142000, 150000, 155000],
-            backgroundColor: '#667eea'
-          }, {
-            label: '2025年',
-            data: [110000, 125000, 120000, 130000, 140000, 145000],
-            backgroundColor: '#a0aec0'
+            label: '銷售額',
+            data: storeData.map(d => d.sales),
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4,
+            fill: true
           }]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return 'RM ' + value.toLocaleString();
+                }
+              }
+            }
+          }
         }
       });
+    }
+    
+    function renderSalesChart(monthlyData) {
+      const salesCtx = document.getElementById('salesChart').getContext('2d');
       
-      // Render store pie chart
+      const labels = monthlyData.map(d => d.month);
+      const data = monthlyData.map(d => d.sales);
+      
+      new Chart(salesCtx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '2026年',
+            data: data,
+            backgroundColor: '#667eea'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return 'RM ' + value.toLocaleString();
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    function renderStoreChart(storeBreakdown) {
       const storeCtx = document.getElementById('storeChart').getContext('2d');
+      
+      // Use real data if available
+      let labels = ['Mid Valley', 'Kota Damansara', 'Sri Petaling', '其他'];
+      let data = [35, 25, 20, 20];
+      
+      if (storeBreakdown) {
+        labels = Object.keys(storeBreakdown).map(code => STORE_NAMES[code] || code);
+        data = Object.values(storeBreakdown);
+      }
+      
       new Chart(storeCtx, {
         type: 'doughnut',
         data: {
-          labels: ['Mid Valley', 'Kota Damansara', 'Sri Petaling', '其他'],
+          labels: labels,
           datasets: [{
-            data: [35, 25, 20, 20],
-            backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#f5576c']
+            data: data,
+            backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4ade80', '#fbbf24', '#60a5fa', '#a78bfa', '#f472b6']
           }]
         },
         options: {
