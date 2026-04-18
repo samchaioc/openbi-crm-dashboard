@@ -569,47 +569,6 @@
       document.getElementById('openbi-months').textContent = '0 個月';
     }
     
-    // Remove old functions
-    /*
-    async function fetchMonthSales(url) {
-      // Deprecated - now handled by GAS proxy
-    }
-    */
-        
-        // Fetch data for each month
-        const monthlyData = [];
-        let totalSales = 0;
-        const storeTotals = {};
-        
-        for (const month of validMonths) {
-          try {
-            const monthData = await fetchMonthSales(month.url);
-            monthlyData.push({
-              month: month.month,
-              sales: monthData.total,
-              stores: monthData.stores
-            });
-            totalSales += monthData.total;
-            
-            // Aggregate store data
-            for (const [store, sales] of Object.entries(monthData.stores)) {
-              storeTotals[store] = (storeTotals[store] || 0) + sales;
-            }
-          } catch (e) {
-            console.warn('Failed to load month:', month.month);
-            monthlyData.push({ month: month.month, sales: 0, stores: {} });
-          }
-        }
-        
-        // Update KPIs
-        document.getElementById('openbi-sales').textContent = formatMoney(totalSales);
-        document.getElementById('openbi-stores').textContent = Object.keys(storeTotals).length + ' 間';
-        document.getElementById('openbi-daily').textContent = monthlyData.length > 0 ? formatMoney(totalSales / (monthlyData.length * 30)) : 'RM 0';
-        document.getElementById('openbi-months').textContent = validMonths.length + ' 個月';
-        
-        // Render charts
-        renderOpenBICharts(monthlyData, storeTotals);
-        
       } catch (error) {
         console.error('OpenBI load error:', error);
         document.getElementById('openbi-sales').innerHTML = '<span style="color: red;">錯誤: ' + error.message + '</span>';
