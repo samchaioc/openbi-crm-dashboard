@@ -400,15 +400,15 @@
       
       <div class="sidebar-section">
         <div class="sidebar-section-title">主要</div>
-        <div class="sidebar-item active" onclick="showSection('overview')">
+        <div class="sidebar-item active" onclick="showSection('overview', this)">
           <span class="sidebar-item-icon">📈</span>
           <span>總覽</span>
         </div>
-        <div class="sidebar-item" onclick="showSection('openbi')">
+        <div class="sidebar-item" onclick="showSection('openbi', this)">
           <span class="sidebar-item-icon">📊</span>
           <span>OpenBI 報表</span>
         </div>
-        <div class="sidebar-item" onclick="showSection('crm')">
+        <div class="sidebar-item" onclick="showSection('crm', this)">
           <span class="sidebar-item-icon">📋</span>
           <span>CRM 管理</span>
         </div>
@@ -416,15 +416,15 @@
       
       <div class="sidebar-section">
         <div class="sidebar-section-title">門店</div>
-        <div class="sidebar-item" onclick="selectStore('MV')">
+        <div class="sidebar-item" onclick="selectStore('MV', this)">
           <span class="sidebar-item-icon">🏪</span>
           <span>Mid Valley</span>
         </div>
-        <div class="sidebar-item" onclick="selectStore('KD')">
+        <div class="sidebar-item" onclick="selectStore('KD', this)">
           <span class="sidebar-item-icon">🏪</span>
           <span>Kota Damansara</span>
         </div>
-        <div class="sidebar-item" onclick="selectStore('SP')">
+        <div class="sidebar-item" onclick="selectStore('SP', this)">
           <span class="sidebar-item-icon">🏪</span>
           <span>Sri Petaling</span>
         </div>
@@ -515,7 +515,7 @@
             <div class="card-title">門店表現</div>
           </div>
           <div class="store-list">
-            <div class="store-item active">
+            <div class="store-item active" onclick="selectStore('MV', this)">
               <div class="store-icon" style="background: rgba(99, 102, 241, 0.1);">MV</div>
               <div class="store-info">
                 <div class="store-name">Mid Valley</div>
@@ -524,7 +524,7 @@
               <div class="store-trend up">+12%</div>
             </div>
             
-            <div class="store-item">
+            <div class="store-item" onclick="selectStore('KD', this)">
               <div class="store-icon" style="background: rgba(16, 185, 129, 0.1);">KD</div>
               <div class="store-info">
                 <div class="store-name">Kota Damansara</div>
@@ -533,7 +533,7 @@
               <div class="store-trend up">+8%</div>
             </div>
             
-            <div class="store-item">
+            <div class="store-item" onclick="selectStore('SP', this)">
               <div class="store-icon" style="background: rgba(245, 158, 11, 0.1);">SP</div>
               <div class="store-info">
                 <div class="store-name">Sri Petaling</div>
@@ -542,7 +542,7 @@
               <div class="store-trend down">-3%</div>
             </div>
             
-            <div class="store-item">
+            <div class="store-item" onclick="selectStore('PI', this)">
               <div class="store-icon" style="background: rgba(239, 68, 68, 0.1);">PI</div>
               <div class="store-info">
                 <div class="store-name">Pandan Indah</div>
@@ -638,18 +638,24 @@
     }
     
     // Navigation
-    function showSection(section) {
+    function showSection(section, clickedElement) {
       document.querySelectorAll('.sidebar-item').forEach(item => {
         item.classList.remove('active');
       });
-      event.target.closest('.sidebar-item').classList.add('active');
+      if (clickedElement) {
+        clickedElement.classList.add('active');
+      }
+      console.log('Section:', section);
     }
     
-    function selectStore(store) {
+    function selectStore(store, clickedElement) {
       document.querySelectorAll('.store-item').forEach(item => {
         item.classList.remove('active');
       });
-      event.target.closest('.store-item').classList.add('active');
+      if (clickedElement) {
+        clickedElement.classList.add('active');
+      }
+      console.log('Store:', store);
     }
     
     // Initialize
