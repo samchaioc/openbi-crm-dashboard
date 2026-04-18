@@ -684,13 +684,6 @@
       document.getElementById('openbi-months').textContent = '0 個月';
     }
     
-      } catch (error) {
-        console.error('OpenBI load error:', error);
-        document.getElementById('openbi-sales').innerHTML = '<span style="color: red;">錯誤: ' + error.message + '</span>';
-        showOpenBIError();
-      }
-    }
-    
     async function fetchMonthSales(url) {
       console.log('Fetching month:', url);
       
@@ -797,13 +790,6 @@
           maintainAspectRatio: false
         }
       });
-    }
-    
-    function showOpenBIError() {
-      document.getElementById('openbi-sales').textContent = 'RM 0';
-      document.getElementById('openbi-stores').textContent = '0 間';
-      document.getElementById('openbi-daily').textContent = 'RM 0';
-      document.getElementById('openbi-months').textContent = '0 個月';
     }
     
     // Load CRM Data
