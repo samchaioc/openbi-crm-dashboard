@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenBI + CRM Dashboard</title>
+  <title>Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -18,17 +18,15 @@
       --border-color: #e5e7eb;
       --success: #10b981;
       --danger: #ef4444;
-      --warning: #f59e0b;
     }
     
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--main-bg);
       color: var(--text-primary);
       min-height: 100vh;
     }
     
-    /* Layout */
     .layout {
       display: flex;
       min-height: 100vh;
@@ -42,7 +40,6 @@
       padding: 24px 16px;
       position: fixed;
       height: 100vh;
-      overflow-y: auto;
     }
     
     .sidebar-logo {
@@ -68,11 +65,6 @@
     .sidebar-logo-text {
       font-size: 18px;
       font-weight: 600;
-    }
-    
-    .sidebar-logo-sub {
-      font-size: 12px;
-      opacity: 0.6;
     }
     
     .sidebar-section {
@@ -108,16 +100,6 @@
       background: var(--sidebar-active);
     }
     
-    .sidebar-item-icon {
-      width: 20px;
-      height: 20px;
-      opacity: 0.7;
-    }
-    
-    .sidebar-item.active .sidebar-item-icon {
-      opacity: 1;
-    }
-    
     /* Main Content */
     .main {
       flex: 1;
@@ -125,7 +107,6 @@
       padding: 24px 32px;
     }
     
-    /* Header */
     .header {
       display: flex;
       justify-content: space-between;
@@ -144,39 +125,7 @@
       margin-top: 4px;
     }
     
-    .header-actions {
-      display: flex;
-      gap: 12px;
-    }
-    
-    .btn {
-      padding: 10px 16px;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      background: white;
-      cursor: pointer;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
-    }
-    
-    .btn:hover {
-      background: var(--main-bg);
-    }
-    
-    .btn-primary {
-      background: var(--sidebar-active);
-      color: white;
-      border-color: var(--sidebar-active);
-    }
-    
-    .btn-primary:hover {
-      background: #5558e0;
-    }
-    
-    /* KPI Grid */
+    /* KPI Cards */
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -204,35 +153,16 @@
       font-weight: 500;
     }
     
-    .kpi-trend {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 4px 8px;
-      border-radius: 6px;
-    }
-    
-    .kpi-trend.up {
-      color: var(--success);
-      background: rgba(16, 185, 129, 0.1);
-    }
-    
-    .kpi-trend.down {
-      color: var(--danger);
-      background: rgba(239, 68, 68, 0.1);
-    }
-    
     .kpi-value {
       font-size: 28px;
       font-weight: 700;
       margin-bottom: 8px;
     }
     
-    .kpi-chart {
-      height: 40px;
-      margin-top: 12px;
+    .kpi-unit {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 400;
     }
     
     /* Content Grid */
@@ -242,7 +172,6 @@
       gap: 24px;
     }
     
-    /* Card */
     .card {
       background: var(--card-bg);
       border-radius: 12px;
@@ -262,28 +191,6 @@
       font-weight: 600;
     }
     
-    .card-actions {
-      display: flex;
-      gap: 8px;
-    }
-    
-    .tab-btn {
-      padding: 6px 12px;
-      border-radius: 6px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-    
-    .tab-btn.active {
-      background: var(--main-bg);
-      color: var(--text-primary);
-      font-weight: 500;
-    }
-    
-    /* Chart Container */
     .chart-container {
       height: 300px;
       position: relative;
@@ -293,69 +200,48 @@
       height: 200px;
     }
     
-    /* Store List */
-    .store-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    /* Sections */
+    .section {
+      display: none;
     }
     
-    .store-item {
-      display: flex;
-      align-items: center;
-      padding: 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: 1px solid transparent;
+    .section.active {
+      display: block;
     }
     
-    .store-item:hover {
-      background: var(--main-bg);
-    }
-    
-    .store-item.active {
-      background: rgba(99, 102, 241, 0.1);
-      border-color: var(--sidebar-active);
-    }
-    
-    .store-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      margin-right: 12px;
-    }
-    
-    .store-info {
-      flex: 1;
-    }
-    
-    .store-name {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-    
-    .store-value {
-      font-size: 12px;
+    /* Loading State */
+    .loading {
+      text-align: center;
+      padding: 40px;
       color: var(--text-secondary);
     }
     
-    .store-trend {
-      font-size: 12px;
-      font-weight: 600;
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid var(--sidebar-active);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
     }
     
-    .store-trend.up {
-      color: var(--success);
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
     
-    .store-trend.down {
-      color: var(--danger);
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
     }
     
     /* Responsive */
@@ -363,24 +249,7 @@
       .kpi-grid {
         grid-template-columns: repeat(2, 1fr);
       }
-      
       .content-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .sidebar {
-        width: 100%;
-        position: relative;
-        height: auto;
-      }
-      
-      .main {
-        margin-left: 0;
-      }
-      
-      .kpi-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -393,219 +262,165 @@
       <div class="sidebar-logo">
         <div class="sidebar-logo-icon">📊</div>
         <div>
-          <div class="sidebar-logo-text">OpenBI</div>
-          <div class="sidebar-logo-sub">+ CRM Dashboard</div>
+          <div class="sidebar-logo-text">Dashboard</div>
         </div>
       </div>
       
       <div class="sidebar-section">
-        <div class="sidebar-section-title">主要</div>
-        <div class="sidebar-item active" onclick="showSection('overview', this)">
-          <span class="sidebar-item-icon">📈</span>
-          <span>總覽</span>
+        <div class="sidebar-section-title">業務系統</div>
+        <div class="sidebar-item active" onclick="showApp('openbi', this)">
+          <span>📈</span>
+          <span>OpenBI</span>
         </div>
-        <div class="sidebar-item" onclick="showSection('openbi', this)">
-          <span class="sidebar-item-icon">📊</span>
-          <span>OpenBI 報表</span>
-        </div>
-        <div class="sidebar-item" onclick="showSection('crm', this)">
-          <span class="sidebar-item-icon">📋</span>
-          <span>CRM 管理</span>
-        </div>
-      </div>
-      
-      <div class="sidebar-section">
-        <div class="sidebar-section-title">門店</div>
-        <div class="sidebar-item" onclick="showSection('stores', this)">
-          <span class="sidebar-item-icon">🏪</span>
-          <span>門店管理</span>
+        <div class="sidebar-item" onclick="showApp('crm', this)">
+          <span>📋</span>
+          <span>CRM</span>
         </div>
       </div>
     </aside>
     
     <!-- Main Content -->
     <main class="main">
-      <!-- Header -->
-      <div class="header">
-        <div>
-          <div class="header-title">Dashboard</div>
-          <div class="header-subtitle">歡迎回來，查看今天的數據概覽</div>
-        </div>
-        <div class="header-actions">
-          <button class="btn">📅 2026年4月</button>
-          <button class="btn btn-primary">⬇️ 導出報告</button>
-        </div>
-      </div>
-      
-      <!-- KPI Cards -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <div class="kpi-title">本月總銷售</div>
-            <div class="kpi-trend up">↗ +12.5%</div>
-          </div>
-          <div class="kpi-value" id="kpi-sales">RM 405K</div>
-          <div class="kpi-chart">
-            <canvas id="miniChart1"></canvas>
+      <!-- OpenBI App -->
+      <div id="openbi-app" class="app-section active">
+        <div class="header">
+          <div>
+            <div class="header-title">OpenBI Dashboard</div>
+            <div class="header-subtitle">餐飲業務數據分析</div>
           </div>
         </div>
         
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <div class="kpi-title">總保單數</div>
-            <div class="kpi-trend up">↗ +8.2%</div>
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">本月總銷售</div>
+            </div>
+            <div class="kpi-value" id="openbi-sales">
+              <span class="loading">--</span>
+            </div>
           </div>
-          <div class="kpi-value" id="kpi-policies">24 張</div>
-          <div class="kpi-chart">
-            <canvas id="miniChart2"></canvas>
+          
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">門店數量</div>
+            </div>
+            <div class="kpi-value" id="openbi-stores">
+              <span class="loading">--</span>
+            </div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">平均日銷售</div>
+            </div>
+            <div class="kpi-value" id="openbi-daily">
+              <span class="loading">--</span>
+            </div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">數據月份</div>
+            </div>
+            <div class="kpi-value" id="openbi-months">
+              <span class="loading">--</span>
+            </div>
           </div>
         </div>
         
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <div class="kpi-title">總客戶數</div>
-            <div class="kpi-trend down">↘ -2.1%</div>
-          </div>
-          <div class="kpi-value" id="kpi-clients">18 人</div>
-          <div class="kpi-chart">
-            <canvas id="miniChart3"></canvas>
-          </div>
-        </div>
-        
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <div class="kpi-title">總保費收入</div>
-            <div class="kpi-trend up">↗ +15.3%</div>
-          </div>
-          <div class="kpi-value" id="kpi-premium">RM 1.2M</div>
-          <div class="kpi-chart">
-            <canvas id="miniChart4"></canvas>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Overview Section -->
-      <div id="overview-section" class="content-section">
-        <!-- Content Grid -->
+        <!-- Charts -->
         <div class="content-grid">
-          <!-- Main Chart -->
           <div class="card">
             <div class="card-header">
-              <div class="card-title">銷售趨勢分析</div>
-              <div class="card-actions">
-                <button class="tab-btn active">週</button>
-                <button class="tab-btn">月</button>
-                <button class="tab-btn">年</button>
-              </div>
+              <div class="card-title">月度銷售趨勢</div>
             </div>
             <div class="chart-container">
-              <canvas id="mainChart"></canvas>
+              <canvas id="openbiChart"></canvas>
             </div>
           </div>
           
-          <!-- Store Performance Summary -->
           <div class="card">
             <div class="card-header">
-              <div class="card-title">門店表現概覽</div>
-              <button class="btn" onclick="showSection('stores', document.querySelector('.sidebar-item:nth-child(5)'))">查看全部 →</button>
+              <div class="card-title">門店銷售佔比</div>
             </div>
-            <div class="store-list">
-              <div class="store-item">
-                <div class="store-icon" style="background: rgba(99, 102, 241, 0.1);">MV</div>
-                <div class="store-info">
-                  <div class="store-name">Mid Valley</div>
-                  <div class="store-value">RM 150,000</div>
-                </div>
-                <div class="store-trend up">+12%</div>
-              </div>
-              
-              <div class="store-item">
-                <div class="store-icon" style="background: rgba(16, 185, 129, 0.1);">KD</div>
-                <div class="store-info">
-                  <div class="store-name">Kota Damansara</div>
-                  <div class="store-value">RM 95,000</div>
-                </div>
-                <div class="store-trend up">+8%</div>
-              </div>
-              
-              <div class="store-item">
-                <div class="store-icon" style="background: rgba(245, 158, 11, 0.1);">SP</div>
-                <div class="store-info">
-                  <div class="store-name">Sri Petaling</div>
-                  <div class="store-value">RM 78,000</div>
-                </div>
-                <div class="store-trend down">-3%</div>
-              </div>
+            <div class="chart-container small">
+              <canvas id="storePieChart"></canvas>
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Stores Section -->
-      <div id="stores-section" class="content-section" style="display: none;">
+      <!-- CRM App -->
+      <div id="crm-app" class="app-section" style="display: none;">
+        <div class="header">
+          <div>
+            <div class="header-title">CRM Dashboard</div>
+            <div class="header-subtitle">保單客戶管理系統</div>
+          </div>
+        </div>
+        
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">總保單數</div>
+            </div>
+            <div class="kpi-value" id="crm-policies">
+              <div class="loading">
+                <div class="spinner"></div>
+                <div>加載中...</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">總客戶數</div>
+            </div>
+            <div class="kpi-value" id="crm-clients">
+              <div class="loading">
+                <div class="spinner"></div>
+                <div>加載中...</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">總保費收入</div>
+            </div>
+            <div class="kpi-value" id="crm-premium">
+              <div class="loading">
+                <div class="spinner"></div>
+                <div>加載中...</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <div class="kpi-title">本月新增</div>
+            </div>
+            <div class="kpi-value" id="crm-new">
+              <div class="loading">
+                <div class="spinner"></div>
+                <div>加載中...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- CRM Content -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🏪 門店管理</div>
+            <div class="card-title">最近保單記錄</div>
           </div>
-          
-          <!-- Store Selector -->
-          <div class="store-selector" style="margin-bottom: 24px;">
-            <button class="store-btn active" onclick="selectStoreDetail('ALL', this)">全部門店</button>
-            <button class="store-btn" onclick="selectStoreDetail('MV', this)">Mid Valley</button>
-            <button class="store-btn" onclick="selectStoreDetail('KD', this)">Kota Damansara</button>
-            <button class="store-btn" onclick="selectStoreDetail('SP', this)">Sri Petaling</button>
-            <button class="store-btn" onclick="selectStoreDetail('PI', this)">Pandan Indah</button>
-            <button class="store-btn" onclick="selectStoreDetail('PP', this)">Pearl Point</button>
-            <button class="store-btn" onclick="selectStoreDetail('KP', this)">Kepong</button>
-            <button class="store-btn" onclick="selectStoreDetail('OFK', this)">Old Fatt Kee</button>
-            <button class="store-btn" onclick="selectStoreDetail('PVL', this)">PVL</button>
-            <button class="store-btn" onclick="selectStoreDetail('SS15', this)">SS15</button>
-          </div>
-          
-          <!-- Store Detail -->
-          <div id="storeDetailCard" style="display: none;">
-            <div class="kpi-grid" style="margin-bottom: 24px;">
-              <div class="kpi-card">
-                <div class="kpi-header">
-                  <div class="kpi-title">總銷售額</div>
-                </div>
-                <div class="kpi-value" id="storeTotalSales">-</div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-header">
-                  <div class="kpi-title">月均銷售</div>
-                </div>
-                <div class="kpi-value" id="storeAvgSales">-</div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-header">
-                  <div class="kpi-title">環比變化</div>
-                </div>
-                <div class="kpi-value" id="storeChange">-</div>
-              </div>
+          <div id="crm-table-container">
+            <div class="loading">
+              <div class="spinner"></div>
+              <div>從 Google Sheets 加載數據...</div>
             </div>
-            
-            <div class="chart-container small">
-              <canvas id="storeTrendChart"></canvas>
-            </div>
-          </div>
-          
-          <!-- All Stores Table -->
-          <div id="allStoresTable">
-            <table style="width: 100%; border-collapse: collapse;">
-              <thead>
-                <tr style="border-bottom: 2px solid var(--border-color);">
-                  <th style="text-align: left; padding: 12px;">門店</th>
-                  <th style="text-align: right; padding: 12px;">本月銷售</th>
-                  <th style="text-align: right; padding: 12px;">上月銷售</th>
-                  <th style="text-align: right; padding: 12px;">變化</th>
-                  <th style="text-align: right; padding: 12px;">佔比</th>
-                </tr>
-              </thead>
-              <tbody id="storesTableBody">
-                <!-- Dynamic content -->
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
@@ -613,236 +428,300 @@
   </div>
   
   <script>
-    // Initialize mini charts for KPI cards
-    function initMiniCharts() {
-      const miniChartOptions = {
-        type: 'line',
-        data: {
-          labels: ['1', '2', '3', '4', '5', '6'],
-          datasets: [{
-            data: [30, 45, 35, 50, 45, 60],
-            borderColor: '#6366f1',
-            backgroundColor: 'rgba(99, 102, 241, 0.1)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true,
-            pointRadius: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { display: false },
-            y: { display: false }
-          }
-        }
-      };
+    // Configuration
+    const CONFIG = {
+      // OpenBI - Google Sheet Index
+      OPENBI_INDEX_URL: 'https://docs.google.com/spreadsheets/d/1Gu-Z1V_3sfOE6pWIGd8Hlg--RfWkBlLhDikQmU1g1Pk/export?format=csv',
       
-      for (let i = 1; i <= 4; i++) {
-        const ctx = document.getElementById(`miniChart${i}`).getContext('2d');
-        new Chart(ctx, miniChartOptions);
-      }
+      // CRM - Google Apps Script
+      CRM_GAS_URL: 'https://script.google.com/macros/s/AKfycbx1UigsYc4frBMlqE0L5a-PaIOs5kTGzxaXqt-cniv8_3qIVH_N24swId6y-aZeVLCUcg/exec',
+      
+      API_KEY: 'a8K3mP9vQ2wR5tY7'
+    };
+    
+    // Format helpers
+    function formatMoney(amount) {
+      if (!amount || isNaN(amount)) return 'RM 0';
+      return 'RM ' + Math.round(amount).toLocaleString('en-MY');
     }
     
-    // Initialize main chart
-    function initMainChart() {
-      const ctx = document.getElementById('mainChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: ['2月', '3月', '4月'],
-          datasets: [{
-            label: '2026年',
-            data: [125000, 142000, 138000],
-            borderColor: '#6366f1',
-            backgroundColor: 'rgba(99, 102, 241, 0.1)',
-            borderWidth: 3,
-            tension: 0.4,
-            fill: true,
-            pointRadius: 6,
-            pointHoverRadius: 8
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(0,0,0,0.05)'
-              },
-              ticks: {
-                callback: function(value) {
-                  return 'RM ' + (value / 1000) + 'K';
-                }
-              }
-            },
-            x: {
-              grid: {
-                display: false
-              }
-            }
-          }
-        }
-      });
+    function formatNumber(num) {
+      if (!num || isNaN(num)) return '0';
+      return num.toLocaleString('en-MY');
     }
     
     // Navigation
-    function showSection(section, clickedElement) {
-      // Update sidebar active state
+    function showApp(app, element) {
+      // Update sidebar
       document.querySelectorAll('.sidebar-item').forEach(item => {
         item.classList.remove('active');
       });
-      if (clickedElement) {
-        clickedElement.classList.add('active');
-      }
+      element.classList.add('active');
       
-      // Hide all sections
-      document.querySelectorAll('.content-section').forEach(sec => {
-        sec.style.display = 'none';
-      });
+      // Show/hide apps
+      document.getElementById('openbi-app').style.display = app === 'openbi' ? 'block' : 'none';
+      document.getElementById('crm-app').style.display = app === 'crm' ? 'block' : 'none';
       
-      // Show selected section
-      if (section === 'overview') {
-        document.getElementById('overview-section').style.display = 'block';
-      } else if (section === 'stores') {
-        document.getElementById('stores-section').style.display = 'block';
-        renderStoresTable();
-      }
-      
-      console.log('Section:', section);
-    }
-    
-    // Store detail selection
-    function selectStoreDetail(storeCode, clickedElement) {
-      // Update button styles
-      document.querySelectorAll('.store-selector .store-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      if (clickedElement) {
-        clickedElement.classList.add('active');
-      }
-      
-      const detailCard = document.getElementById('storeDetailCard');
-      const tableDiv = document.getElementById('allStoresTable');
-      
-      if (storeCode === 'ALL') {
-        detailCard.style.display = 'none';
-        tableDiv.style.display = 'block';
-      } else {
-        detailCard.style.display = 'block';
-        tableDiv.style.display = 'none';
-        
-        // Update store detail with mock data
-        const storeData = {
-          'MV': { total: 'RM 450K', avg: 'RM 150K', change: '+12%', trend: [140000, 155000, 150000] },
-          'KD': { total: 'RM 285K', avg: 'RM 95K', change: '+8%', trend: [88000, 100000, 95000] },
-          'SP': { total: 'RM 234K', avg: 'RM 78K', change: '-3%', trend: [82000, 75000, 78000] },
-          'PI': { total: 'RM 156K', avg: 'RM 52K', change: '+5%', trend: [48000, 52000, 52000] },
-          'PP': { total: 'RM 150K', avg: 'RM 50K', change: '0%', trend: [50000, 50000, 50000] }
-        };
-        
-        const data = storeData[storeCode] || storeData['MV'];
-        document.getElementById('storeTotalSales').textContent = data.total;
-        document.getElementById('storeAvgSales').textContent = data.avg;
-        document.getElementById('storeChange').textContent = data.change;
-        document.getElementById('storeChange').style.color = data.change.includes('+') ? 'var(--success)' : (data.change.includes('-') ? 'var(--danger)' : 'var(--text-secondary)');
-        
-        // Render trend chart
-        renderStoreTrendChart(data.trend);
+      // Load data if needed
+      if (app === 'openbi') {
+        loadOpenBIData();
+      } else if (app === 'crm') {
+        loadCRMData();
       }
     }
     
-    // Render stores table
-    function renderStoresTable() {
-      const tbody = document.getElementById('storesTableBody');
-      const stores = [
-        { name: 'Mid Valley', code: 'MV', current: 150000, previous: 134000, change: '+12%', share: '37%' },
-        { name: 'Kota Damansara', code: 'KD', current: 95000, previous: 88000, change: '+8%', share: '23%' },
-        { name: 'Sri Petaling', code: 'SP', current: 78000, previous: 80000, change: '-3%', share: '19%' },
-        { name: 'Pandan Indah', code: 'PI', current: 52000, previous: 49000, change: '+5%', share: '13%' },
-        { name: 'Pearl Point', code: 'PP', current: 30000, previous: 30000, change: '0%', share: '8%' }
-      ];
-      
-      tbody.innerHTML = stores.map(s => `
-        <tr style="border-bottom: 1px solid var(--border-color);">
-          <td style="padding: 12px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 32px; height: 32px; background: rgba(99, 102, 241, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">${s.code}</div>
-              <span>${s.name}</span>
-            </div>
-          </td>
-          <td style="text-align: right; padding: 12px; font-weight: 600;">RM ${s.current.toLocaleString()}</td>
-          <td style="text-align: right; padding: 12px; color: var(--text-secondary);">RM ${s.previous.toLocaleString()}</td>
-          <td style="text-align: right; padding: 12px; color: ${s.change.includes('+') ? 'var(--success)' : (s.change.includes('-') ? 'var(--danger)' : 'var(--text-secondary)')}; font-weight: 600;">${s.change}</td>
-          <td style="text-align: right; padding: 12px; color: var(--text-secondary);">${s.share}</td>
-        </tr>
-      `).join('');
+    // Load OpenBI Data
+    async function loadOpenBIData() {
+      try {
+        const proxyUrl = 'https://api.allorigins.win/raw?url=';
+        const response = await fetch(proxyUrl + encodeURIComponent(CONFIG.OPENBI_INDEX_URL));
+        const csvText = await response.text();
+        
+        // Parse Index CSV
+        const lines = csvText.trim().split('\n');
+        const months = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',');
+          if (cols.length >= 3 && cols[0] && cols[1]) {
+            months.push({
+              year: cols[0].trim(),
+              month: cols[1].trim(),
+              url: cols[2].trim()
+            });
+          }
+        }
+        
+        // Only use available months (JAN, FEB, MAR based on your data)
+        const availableMonths = ['JAN', 'FEB', 'MAR'];
+        const validMonths = months.filter(m => availableMonths.includes(m.month));
+        
+        // Fetch data for each month
+        const monthlyData = [];
+        let totalSales = 0;
+        const storeTotals = {};
+        
+        for (const month of validMonths) {
+          try {
+            const monthData = await fetchMonthSales(month.url);
+            monthlyData.push({
+              month: month.month,
+              sales: monthData.total,
+              stores: monthData.stores
+            });
+            totalSales += monthData.total;
+            
+            // Aggregate store data
+            for (const [store, sales] of Object.entries(monthData.stores)) {
+              storeTotals[store] = (storeTotals[store] || 0) + sales;
+            }
+          } catch (e) {
+            console.warn('Failed to load month:', month.month);
+            monthlyData.push({ month: month.month, sales: 0, stores: {} });
+          }
+        }
+        
+        // Update KPIs
+        document.getElementById('openbi-sales').textContent = formatMoney(totalSales);
+        document.getElementById('openbi-stores').textContent = Object.keys(storeTotals).length + ' 間';
+        document.getElementById('openbi-daily').textContent = monthlyData.length > 0 ? formatMoney(totalSales / (monthlyData.length * 30)) : 'RM 0';
+        document.getElementById('openbi-months').textContent = validMonths.length + ' 個月';
+        
+        // Render charts
+        renderOpenBICharts(monthlyData, storeTotals);
+        
+      } catch (error) {
+        console.error('OpenBI load error:', error);
+        showOpenBIError();
+      }
     }
     
-    // Render store trend chart
-    function renderStoreTrendChart(data) {
-      const canvas = document.getElementById('storeTrendChart');
-      if (!canvas) return;
+    async function fetchMonthSales(url) {
+      const proxyUrl = 'https://api.allorigins.win/raw?url=';
+      const response = await fetch(proxyUrl + encodeURIComponent(url + '&key=' + CONFIG.API_KEY));
+      const csvText = await response.text();
       
-      // Destroy existing chart
-      if (canvas.chart) {
-        canvas.chart.destroy();
+      const lines = csvText.trim().split('\n');
+      if (lines.length < 4) return { total: 0, stores: {} };
+      
+      const storeRow = lines[1].split(',');
+      const headerRow = lines[3].split(',');
+      
+      // Find Nett columns per store
+      const storeNettMap = {};
+      let currentStore = null;
+      
+      for (let i = 0; i < storeRow.length; i++) {
+        const cell = storeRow[i]?.trim();
+        if (cell && cell.startsWith('SALES ')) {
+          currentStore = cell.replace('SALES ', '');
+        }
+        if (currentStore && headerRow[i]?.trim() === 'Nett') {
+          if (!storeNettMap[currentStore]) storeNettMap[currentStore] = [];
+          storeNettMap[currentStore].push(i);
+        }
       }
       
-      const ctx = canvas.getContext('2d');
-      canvas.chart = new Chart(ctx, {
-        type: 'line',
+      // Sum sales
+      const stores = {};
+      let total = 0;
+      
+      for (let i = 4; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        for (const [store, indices] of Object.entries(storeNettMap)) {
+          indices.forEach(idx => {
+            if (cols[idx]) {
+              const val = parseFloat(cols[idx].replace(/"/g, '').replace(/,/g, '')) || 0;
+              stores[store] = (stores[store] || 0) + val;
+              total += val;
+            }
+          });
+        }
+      }
+      
+      return { total, stores };
+    }
+    
+    function renderOpenBICharts(monthlyData, storeTotals) {
+      // Sort by month order
+      const monthOrder = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN'];
+      monthlyData.sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
+      
+      // Main chart
+      const ctx = document.getElementById('openbiChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
         data: {
-          labels: ['2月', '3月', '4月'],
+          labels: monthlyData.map(d => d.month),
           datasets: [{
-            label: '銷售額',
-            data: data,
-            borderColor: '#6366f1',
-            backgroundColor: 'rgba(99, 102, 241, 0.1)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true
+            label: '銷售額 (RM)',
+            data: monthlyData.map(d => d.sales),
+            backgroundColor: '#6366f1'
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
           scales: {
             y: {
               beginAtZero: true,
               ticks: {
-                callback: function(value) {
-                  return 'RM ' + (value / 1000) + 'K';
-                }
+                callback: v => 'RM ' + v.toLocaleString()
               }
             }
           }
         }
       });
+      
+      // Pie chart
+      const pieCtx = document.getElementById('storePieChart').getContext('2d');
+      new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(storeTotals),
+          datasets: [{
+            data: Object.values(storeTotals),
+            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
     }
     
-    function selectStore(store, clickedElement) {
-      document.querySelectorAll('.store-item').forEach(item => {
-        item.classList.remove('active');
-      });
-      if (clickedElement) {
-        clickedElement.classList.add('active');
+    function showOpenBIError() {
+      document.getElementById('openbi-sales').textContent = 'RM 0';
+      document.getElementById('openbi-stores').textContent = '0 間';
+      document.getElementById('openbi-daily').textContent = 'RM 0';
+      document.getElementById('openbi-months').textContent = '0 個月';
+    }
+    
+    // Load CRM Data
+    async function loadCRMData() {
+      try {
+        const response = await fetch(CONFIG.CRM_GAS_URL + '?action=stats&key=' + CONFIG.API_KEY);
+        const data = await response.json();
+        
+        if (data.success) {
+          document.getElementById('crm-policies').innerHTML = formatNumber(data.totalPolicies) + '<span class="kpi-unit"> 張</span>';
+          document.getElementById('crm-clients').innerHTML = formatNumber(data.totalClients) + '<span class="kpi-unit"> 人</span>';
+          document.getElementById('crm-premium').innerHTML = formatMoney(data.totalPremium) + '<span class="kpi-unit"> RM</span>';
+          document.getElementById('crm-new').innerHTML = '0<span class="kpi-unit"> 張</span>';
+          
+          // Load recent policies
+          await loadCRMTable();
+        } else {
+          showCRMEmpty();
+        }
+      } catch (error) {
+        console.error('CRM load error:', error);
+        showCRMEmpty();
       }
-      console.log('Store:', store);
+    }
+    
+    async function loadCRMTable() {
+      try {
+        const response = await fetch(CONFIG.CRM_GAS_URL + '?action=list&limit=5&key=' + CONFIG.API_KEY);
+        const data = await response.json();
+        
+        const container = document.getElementById('crm-table-container');
+        
+        if (!data.success || !data.policies || data.policies.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">📋</div>
+              <div>暫無保單記錄</div>
+            </div>
+          `;
+          return;
+        }
+        
+        // Render table
+        let html = '<table style="width: 100%; border-collapse: collapse;"><thead><tr style="border-bottom: 2px solid var(--border-color);">';
+        html += '<th style="text-align: left; padding: 12px;">客戶</th>';
+        html += '<th style="text-align: left; padding: 12px;">保單號</th>';
+        html += '<th style="text-align: right; padding: 12px;">保費</th>';
+        html += '</tr></thead><tbody>';
+        
+        data.policies.forEach(p => {
+          html += `<tr style="border-bottom: 1px solid var(--border-color);">`;
+          html += `<td style="padding: 12px;">${p.clientName || '-'}</td>`;
+          html += `<td style="padding: 12px;">${p.policyNumber || '-'}</td>`;
+          html += `<td style="text-align: right; padding: 12px;">RM ${p.premiumAmount || '0'}</td>`;
+          html += `</tr>`;
+        });
+        
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        
+      } catch (error) {
+        document.getElementById('crm-table-container').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">⚠️</div>
+            <div>無法加載數據</div>
+          </div>
+        `;
+      }
+    }
+    
+    function showCRMEmpty() {
+      document.getElementById('crm-policies').innerHTML = '0<span class="kpi-unit"> 張</span>';
+      document.getElementById('crm-clients').innerHTML = '0<span class="kpi-unit"> 人</span>';
+      document.getElementById('crm-premium').innerHTML = 'RM 0<span class="kpi-unit"> RM</span>';
+      document.getElementById('crm-new').innerHTML = '0<span class="kpi-unit"> 張</span>';
+      document.getElementById('crm-table-container').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <div>暫無保單記錄</div>
+        </div>
+      `;
     }
     
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-      initMiniCharts();
-      initMainChart();
+      loadOpenBIData();
     });
   </script>
 </body>
