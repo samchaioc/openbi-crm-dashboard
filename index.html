@@ -790,13 +790,18 @@
       card.style.display = 'block';
       title.textContent = `🏪 ${STORE_NAMES[storeCode]} 詳細數據`;
       
+      // Debug: log current data
+      console.log('Current store data:', currentStoreData);
+      console.log('Selected store:', storeCode);
+      
       // Get store data from current data
       let storeData = [];
       let totalSales = 0;
       
-      if (currentStoreData && currentStoreData.storeBreakdown) {
+      if (currentStoreData && currentStoreData.monthlyData) {
         // Extract data for this store across months
         currentStoreData.monthlyData.forEach(month => {
+          console.log('Month:', month.month, 'Stores:', month.stores);
           if (month.stores && month.stores[storeCode]) {
             storeData.push({
               month: month.month,
@@ -806,6 +811,8 @@
           }
         });
       }
+      
+      console.log('Extracted store data:', storeData);
       
       // Calculate average and change
       const avgSales = storeData.length > 0 ? totalSales / storeData.length : 0;
@@ -839,10 +846,16 @@
     }
     
     function renderStoreTrendChart(storeCode, storeData) {
-      // Remove existing chart if any
-      const existingCanvas = document.getElementById('storeTrendChart');
-      if (existingCanvas) {
-        existingCanvas.remove();
+      // Remove existing trend chart card if any
+      const existingCard = document.getElementById('storeTrendCard');
+      if (existingCard) {
+        existingCard.remove();
+      }
+      
+      // Check if we have data to display
+      if (!storeData || storeData.length === 0) {
+        console.warn('No store data available for', storeCode);
+        return;
       }
       
       // Create new canvas
@@ -851,11 +864,18 @@
       canvas.style.height = '250px';
       
       const card = document.createElement('div');
+      card.id = 'storeTrendCard';
       card.className = 'card';
       card.innerHTML = `<div class="card-title">📈 ${STORE_NAMES[storeCode]} 月度趨勢</div>`;
       card.appendChild(canvas);
       
-      document.getElementById('storeDetailCard').after(card);
+      // Insert after store detail card
+      const storeDetailCard = document.getElementById('storeDetailCard');
+      if (storeDetailCard && storeDetailCard.nextSibling) {
+        storeDetailCard.parentNode.insertBefore(card, storeDetailCard.nextSibling);
+      } else if (storeDetailCard) {
+        storeDetailCard.parentNode.appendChild(card);
+      }
       
       // Render chart
       const ctx = canvas.getContext('2d');
