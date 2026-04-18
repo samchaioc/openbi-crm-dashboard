@@ -430,8 +430,8 @@
   <script>
     // Configuration
     const CONFIG = {
-      // OpenBI - Cloudflare Pages Function
-      OPENBI_API_URL: '/api/openbi',
+      // OpenBI - Index Sheet URL
+      OPENBI_INDEX_URL: 'https://docs.google.com/spreadsheets/d/1Gu-Z1V_3sfOE6pWIGd8Hlg--RfWkBlLhDikQmU1g1Pk/export?format=csv',
       
       // CRM - Google Apps Script
       CRM_GAS_URL: 'https://script.google.com/macros/s/AKfycbx1UigsYc4frBMlqE0L5a-PaIOs5kTGzxaXqt-cniv8_3qIVH_N24swId6y-aZeVLCUcg/exec',
@@ -470,30 +470,146 @@
       }
     }
     
-    // Load OpenBI Data from Cloudflare Function
+    // CSV Parser
+    function parseCSV(csv) {
+      const rows = [];
+      const lines = csv.split('\n');
+      
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const row = [];
+        let cell = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          
+          if (char === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+              cell += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (char === ',' && !inQuotes) {
+            row.push(cell.trim());
+            cell = '';
+          } else {
+            cell += char;
+          }
+        }
+        row.push(cell.trim());
+        rows.push(row);
+      }
+      
+      return rows;
+    }
+    
+    // Parse Month CSV Data
+    function parseMonthData(rows) {
+      if (rows.length < 5) {
+        return { total: 0, stores: {} };
+      }
+      
+      const storeRow = rows[1];
+      const headerRow = rows[3];
+      
+      const storeNettMap = {};
+      let currentStore = null;
+      
+      for (let i = 0; i < storeRow.length; i++) {
+        const cell = storeRow[i];
+        if (cell && cell.toString().startsWith('SALES ')) {
+          currentStore = cell.toString().replace('SALES ', '');
+        }
+        if (currentStore && headerRow[i] === 'Nett') {
+          if (!storeNettMap[currentStore]) {
+            storeNettMap[currentStore] = [];
+          }
+          storeNettMap[currentStore].push(i);
+        }
+      }
+      
+      const stores = {};
+      let total = 0;
+      
+      for (let i = 4; i < rows.length; i++) {
+        const row = rows[i];
+        for (const [store, indices] of Object.entries(storeNettMap)) {
+          indices.forEach(idx => {
+            const val = parseFloat(row[idx]) || 0;
+            stores[store] = (stores[store] || 0) + val;
+            total += val;
+          });
+        }
+      }
+      
+      return { total, stores };
+    }
+    
+    // Load OpenBI Data via Cloudflare Proxy
     async function loadOpenBIData() {
       try {
-        console.log('Loading OpenBI data from Cloudflare Function...');
+        console.log('Loading OpenBI data...');
         
-        const response = await fetch(CONFIG.OPENBI_API_URL + '?action=all');
-        const result = await response.json();
+        // Fetch Index via proxy
+        const indexResponse = await fetch('/api/sheet?url=' + encodeURIComponent(CONFIG.OPENBI_INDEX_URL));
+        const indexCsv = await indexResponse.text();
+        const indexRows = parseCSV(indexCsv);
         
-        console.log('API Response:', result);
-        
-        if (!result.success) {
-          throw new Error(result.error || 'API Error');
+        // Parse Index
+        const months = [];
+        for (let i = 1; i < indexRows.length; i++) {
+          const row = indexRows[i];
+          if (row[0] && row[1] && row[2]) {
+            months.push({
+              year: row[0],
+              month: row[1],
+              url: row[2]
+            });
+          }
         }
         
-        const data = result.data;
+        console.log('Found months:', months);
+        
+        // Fetch each month's data
+        const monthData = [];
+        const storeTotals = {};
+        let grandTotal = 0;
+        
+        for (const m of months) {
+          try {
+            const monthResponse = await fetch('/api/sheet?url=' + encodeURIComponent(m.url));
+            const monthCsv = await monthResponse.text();
+            const monthRows = parseCSV(monthCsv);
+            const data = parseMonthData(monthRows);
+            
+            monthData.push({
+              year: m.year,
+              month: m.month,
+              total: data.total,
+              stores: data.stores
+            });
+            
+            grandTotal += data.total;
+            for (const [store, sales] of Object.entries(data.stores)) {
+              storeTotals[store] = (storeTotals[store] || 0) + sales;
+            }
+          } catch (e) {
+            console.log('Failed to load month:', m.year + '-' + m.month, e);
+          }
+        }
+        
+        console.log('Loaded month data:', monthData);
         
         // Update KPIs
-        document.getElementById('openbi-sales').textContent = formatMoney(data.total);
-        document.getElementById('openbi-stores').textContent = Object.keys(data.stores).length + ' 間';
-        document.getElementById('openbi-daily').textContent = data.months.length > 0 ? formatMoney(data.total / (data.months.length * 30)) : 'RM 0';
-        document.getElementById('openbi-months').textContent = data.months.length + ' 個月';
+        document.getElementById('openbi-sales').textContent = formatMoney(grandTotal);
+        document.getElementById('openbi-stores').textContent = Object.keys(storeTotals).length + ' 間';
+        document.getElementById('openbi-daily').textContent = monthData.length > 0 ? formatMoney(grandTotal / (monthData.length * 30)) : 'RM 0';
+        document.getElementById('openbi-months').textContent = monthData.length + ' 個月';
         
         // Render charts
-        renderOpenBICharts(data.months, data.stores);
+        renderOpenBICharts(monthData, storeTotals);
         
       } catch (error) {
         console.error('OpenBI load error:', error);
