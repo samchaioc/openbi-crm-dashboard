@@ -343,14 +343,14 @@
   <script>
     // ============ Configuration ============
     const CONFIG = {
-      // OpenBI Config
-      OPENBI_INDEX_URL: 'https://docs.google.com/spreadsheets/d/YOUR_ID/export?format=csv',
+      // OpenBI Config - 使用現有 Index URL
+      OPENBI_INDEX_URL: 'https://docs.google.com/spreadsheets/d/1Gu-Z1V_3sfOE6pWIGd8Hlg--RfWkBlLhDikQmU1g1Pk/export?format=csv',
       
-      // CRM Config
-      CRM_GAS_URL: 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec',
+      // CRM Config - 使用現有 GAS URL
+      CRM_GAS_URL: 'https://script.google.com/macros/s/AKfycbx1UigsYc4frBMlqE0L5a-PaIOs5kTGzxaXqt-cniv8_3qIVH_N24swId6y-aZeVLCUcg/exec',
       
       // API Key
-      API_KEY: 'your-api-key'
+      API_KEY: 'a8K3mP9vQ2wR5tY7'
     };
     
     // ============ Navigation ============
@@ -380,25 +380,137 @@
         document.getElementById('kpi-clients').textContent = crmStats.totalClients || 0;
         document.getElementById('kpi-premium').textContent = 'RM ' + (crmStats.totalPremium || 0).toLocaleString();
         
-        // Mock sales data (replace with actual OpenBI data)
-        document.getElementById('kpi-sales').textContent = 'RM 150K';
+        // Load OpenBI sales data
+        const openbiData = await fetchOpenBIData();
+        const totalSales = openbiData.totalSales || 0;
+        document.getElementById('kpi-sales').textContent = 'RM ' + totalSales.toLocaleString();
         
-        // Render overview chart
-        renderOverviewChart();
+        // Calculate change percentage
+        const salesChange = openbiData.salesChange || 0;
+        const salesChangeEl = document.getElementById('kpi-sales-change');
+        salesChangeEl.textContent = (salesChange >= 0 ? '+' : '') + salesChange.toFixed(1) + '%';
+        salesChangeEl.className = 'kpi-change ' + (salesChange >= 0 ? 'up' : 'down');
+        
+        // Render overview chart with real data
+        renderOverviewChart(openbiData.monthlyData);
       } catch (error) {
         console.error('Load overview error:', error);
+        // Show error state
+        document.getElementById('kpi-sales').textContent = 'Error';
       }
     }
     
-    function renderOverviewChart() {
+    // Fetch OpenBI data from Google Sheet
+    async function fetchOpenBIData() {
+      try {
+        const response = await fetch(CONFIG.OPENBI_INDEX_URL);
+        const csvText = await response.text();
+        
+        // Parse CSV
+        const lines = csvText.trim().split('\n');
+        const headers = lines[0].split(',');
+        
+        // Find latest month data
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',');
+          data.push({
+            year: cols[0],
+            month: cols[1],
+            url: cols[2]
+          });
+        }
+        
+        // Get latest 6 months
+        const latestData = data.slice(-6);
+        
+        // Fetch actual sales data for each month
+        const monthlyData = [];
+        let totalSales = 0;
+        
+        for (const month of latestData) {
+          try {
+            const monthData = await fetchMonthData(month.url);
+            monthlyData.push({
+              month: month.month,
+              sales: monthData.total
+            });
+            totalSales += monthData.total;
+          } catch (e) {
+            console.warn('Failed to load month:', month.month);
+          }
+        }
+        
+        // Calculate change from previous month
+        let salesChange = 0;
+        if (monthlyData.length >= 2) {
+          const current = monthlyData[monthlyData.length - 1].sales;
+          const previous = monthlyData[monthlyData.length - 2].sales;
+          if (previous > 0) {
+            salesChange = ((current - previous) / previous) * 100;
+          }
+        }
+        
+        return {
+          monthlyData,
+          totalSales,
+          salesChange
+        };
+      } catch (error) {
+        console.error('Fetch OpenBI data error:', error);
+        return { monthlyData: [], totalSales: 0, salesChange: 0 };
+      }
+    }
+    
+    // Fetch individual month data
+    async function fetchMonthData(url) {
+      try {
+        const response = await fetch(url + '&key=' + CONFIG.API_KEY);
+        const csvText = await response.text();
+        
+        // Parse CSV and sum Nett columns
+        const lines = csvText.trim().split('\n');
+        const headerRow = lines[3].split(','); // Header is on row 4
+        
+        // Find Nett column indices
+        const nettIndices = [];
+        headerRow.forEach((col, idx) => {
+          if (col.trim() === 'Nett') {
+            nettIndices.push(idx);
+          }
+        });
+        
+        // Sum all Nett values
+        let total = 0;
+        for (let i = 4; i < lines.length; i++) {
+          const cols = lines[i].split(',');
+          nettIndices.forEach(idx => {
+            const val = parseFloat(cols[idx]) || 0;
+            total += val;
+          });
+        }
+        
+        return { total };
+      } catch (error) {
+        console.error('Fetch month data error:', error);
+        return { total: 0 };
+      }
+    }
+    
+    function renderOverviewChart(monthlyData) {
       const ctx = document.getElementById('overviewChart').getContext('2d');
+      
+      // Use real data if available, otherwise show empty chart
+      const labels = monthlyData.map(d => d.month) || ['1月', '2月', '3月', '4月', '5月', '6月'];
+      const data = monthlyData.map(d => d.sales) || [0, 0, 0, 0, 0, 0];
+      
       new Chart(ctx, {
         type: 'line',
         data: {
-          labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+          labels: labels,
           datasets: [{
             label: '銷售額',
-            data: [120000, 135000, 128000, 142000, 150000, 155000],
+            data: data,
             borderColor: '#667eea',
             backgroundColor: 'rgba(102, 126, 234, 0.1)',
             tension: 0.4,
@@ -410,6 +522,16 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return 'RM ' + value.toLocaleString();
+                }
+              }
+            }
           }
         }
       });
