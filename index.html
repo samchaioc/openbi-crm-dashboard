@@ -470,19 +470,19 @@
       }
     }
     
-    // Load OpenBI Data
-    async function loadOpenBIData() {
-      try {
-        console.log('Loading OpenBI data from GAS...');
-        
-        // Use GAS Proxy with CORS
-        const response = await fetch(CONFIG.OPENBI_PROXY_URL + '?action=all');
-        const result = await response.json();
-        
-        console.log('API Response:', result);
+    // Load OpenBI Data using JSONP
+    function loadOpenBIData() {
+      console.log('Loading OpenBI data via JSONP...');
+      
+      // Create callback function
+      window.openbiCallback = function(result) {
+        console.log('JSONP Response:', result);
         
         if (!result.success) {
-          throw new Error(result.error || 'API Error');
+          console.error('API Error:', result.error);
+          document.getElementById('openbi-sales').innerHTML = '<span style="color: red;">錯誤: ' + result.error + '</span>';
+          showOpenBIError();
+          return;
         }
         
         const data = result.data;
@@ -495,12 +495,17 @@
         
         // Render charts
         renderOpenBICharts(data.months, data.stores);
-        
-      } catch (error) {
-        console.error('OpenBI load error:', error);
-        document.getElementById('openbi-sales').innerHTML = '<span style="color: red;">錯誤: ' + error.message + '</span>';
+      };
+      
+      // Create script tag for JSONP
+      const script = document.createElement('script');
+      script.src = CONFIG.OPENBI_PROXY_URL + '?action=all&callback=openbiCallback';
+      script.onerror = function() {
+        console.error('JSONP load failed');
+        document.getElementById('openbi-sales').innerHTML = '<span style="color: red;">載入失敗</span>';
         showOpenBIError();
-      }
+      };
+      document.head.appendChild(script);
     }
     
     // Keep old function for reference but don't use
