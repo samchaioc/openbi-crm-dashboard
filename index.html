@@ -430,8 +430,8 @@
   <script>
     // Configuration
     const CONFIG = {
-      // OpenBI - GAS Proxy (with CORS)
-      OPENBI_PROXY_URL: 'https://script.google.com/macros/s/AKfycbz7JQqIYPRPwCMOgZJimHUH3R8Q11mPlbL1gRaeuQEwwS_OCtBoGLEiCnONuNfnh3Q/exec',
+      // OpenBI - Cloudflare Pages Function
+      OPENBI_API_URL: '/api/openbi',
       
       // CRM - Google Apps Script
       CRM_GAS_URL: 'https://script.google.com/macros/s/AKfycbx1UigsYc4frBMlqE0L5a-PaIOs5kTGzxaXqt-cniv8_3qIVH_N24swId6y-aZeVLCUcg/exec',
@@ -470,19 +470,18 @@
       }
     }
     
-    // Load OpenBI Data using JSONP
-    function loadOpenBIData() {
-      console.log('Loading OpenBI data via JSONP...');
-      
-      // Create callback function
-      window.openbiCallback = function(result) {
-        console.log('JSONP Response:', result);
+    // Load OpenBI Data from Cloudflare Function
+    async function loadOpenBIData() {
+      try {
+        console.log('Loading OpenBI data from Cloudflare Function...');
+        
+        const response = await fetch(CONFIG.OPENBI_API_URL + '?action=all');
+        const result = await response.json();
+        
+        console.log('API Response:', result);
         
         if (!result.success) {
-          console.error('API Error:', result.error);
-          document.getElementById('openbi-sales').innerHTML = '<span style="color: red;">錯誤: ' + result.error + '</span>';
-          showOpenBIError();
-          return;
+          throw new Error(result.error || 'API Error');
         }
         
         const data = result.data;
@@ -495,17 +494,12 @@
         
         // Render charts
         renderOpenBICharts(data.months, data.stores);
-      };
-      
-      // Create script tag for JSONP
-      const script = document.createElement('script');
-      script.src = CONFIG.OPENBI_PROXY_URL + '?action=all&callback=openbiCallback';
-      script.onerror = function() {
-        console.error('JSONP load failed');
-        document.getElementById('openbi-sales').innerHTML = '<span style="color: red;">載入失敗</span>';
+        
+      } catch (error) {
+        console.error('OpenBI load error:', error);
+        document.getElementById('openbi-sales').innerHTML = '<span style="color: red;">錯誤: ' + error.message + '</span>';
         showOpenBIError();
-      };
-      document.head.appendChild(script);
+      }
     }
     
     // Keep old function for reference but don't use
