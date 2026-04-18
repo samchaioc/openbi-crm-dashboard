@@ -222,6 +222,20 @@
       color: white;
     }
     
+    /* Unit Labels */
+    .unit-label {
+      font-size: 12px;
+      color: #888;
+      font-weight: normal;
+      margin-left: 4px;
+    }
+    
+    .kpi-unit {
+      font-size: 14px;
+      color: #666;
+      margin-top: 4px;
+    }
+    
     /* Loading */
     .loading {
       text-align: center;
@@ -286,22 +300,22 @@
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-value" id="kpi-sales">-</div>
-          <div class="kpi-label">本月銷售</div>
+          <div class="kpi-label">本月銷售<span class="unit-label">(RM)</span></div>
           <div class="kpi-change up" id="kpi-sales-change">+0%</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-value" id="kpi-policies">-</div>
-          <div class="kpi-label">總保單數</div>
+          <div class="kpi-label">總保單數<span class="unit-label">(張)</span></div>
           <div class="kpi-change" id="kpi-policies-change">-</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-value" id="kpi-clients">-</div>
-          <div class="kpi-label">總客戶數</div>
+          <div class="kpi-label">總客戶數<span class="unit-label">(人)</span></div>
           <div class="kpi-change" id="kpi-clients-change">-</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-value" id="kpi-premium">-</div>
-          <div class="kpi-label">總保費</div>
+          <div class="kpi-label">總保費<span class="unit-label">(RM)</span></div>
           <div class="kpi-change up" id="kpi-premium-change">+0%</div>
         </div>
       </div>
@@ -409,6 +423,38 @@
       AVAILABLE_MONTHS: ['2026-FEB', '2026-MAR', '2026-APR']
     };
     
+    // ============ Format Helpers ============
+    function formatMoney(amount) {
+      if (amount === null || amount === undefined || isNaN(amount)) return 'RM 0';
+      return 'RM ' + Math.round(amount).toLocaleString('en-MY');
+    }
+    
+    function formatMoneyShort(amount) {
+      if (amount === null || amount === undefined || isNaN(amount)) return 'RM 0';
+      if (amount >= 1000000) {
+        return 'RM ' + (amount / 1000000).toFixed(1) + 'M';
+      } else if (amount >= 1000) {
+        return 'RM ' + (amount / 1000).toFixed(0) + 'K';
+      }
+      return 'RM ' + amount.toLocaleString('en-MY');
+    }
+    
+    function formatNumber(num, unit = '') {
+      if (num === null || num === undefined || isNaN(num)) return '0' + (unit ? ' ' + unit : '');
+      return num.toLocaleString('en-MY') + (unit ? ' ' + unit : '');
+    }
+    
+    function formatPercentage(value) {
+      if (value === null || value === undefined || isNaN(value)) return '0%';
+      return (value >= 0 ? '+' : '') + value.toFixed(1) + '%';
+    }
+    
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('zh-MY');
+    }
+    
     // ============ Navigation ============
     function showSection(sectionId) {
       // Hide all sections
@@ -432,19 +478,19 @@
       try {
         // Load CRM stats
         const crmStats = await fetchCRMStats();
-        document.getElementById('kpi-policies').textContent = crmStats.totalPolicies || 0;
-        document.getElementById('kpi-clients').textContent = crmStats.totalClients || 0;
-        document.getElementById('kpi-premium').textContent = 'RM ' + (crmStats.totalPremium || 0).toLocaleString();
+        document.getElementById('kpi-policies').textContent = formatNumber(crmStats.totalPolicies, '張');
+        document.getElementById('kpi-clients').textContent = formatNumber(crmStats.totalClients, '人');
+        document.getElementById('kpi-premium').textContent = formatMoneyShort(crmStats.totalPremium || 0);
         
         // Load OpenBI sales data
         const openbiData = await fetchOpenBIData();
         const totalSales = openbiData.totalSales || 0;
-        document.getElementById('kpi-sales').textContent = 'RM ' + totalSales.toLocaleString();
+        document.getElementById('kpi-sales').textContent = formatMoneyShort(totalSales);
         
         // Calculate change percentage
         const salesChange = openbiData.salesChange || 0;
         const salesChangeEl = document.getElementById('kpi-sales-change');
-        salesChangeEl.textContent = (salesChange >= 0 ? '+' : '') + salesChange.toFixed(1) + '%';
+        salesChangeEl.textContent = formatPercentage(salesChange);
         salesChangeEl.className = 'kpi-change ' + (salesChange >= 0 ? 'up' : 'down');
         
         // Render overview chart with real data
@@ -643,7 +689,7 @@
         data: {
           labels: labels,
           datasets: [{
-            label: '銷售額',
+            label: '銷售額 (RM)',
             data: data,
             borderColor: '#667eea',
             backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -655,15 +701,32 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return '銷售額: ' + formatMoney(context.parsed.y);
+                }
+              }
+            }
           },
           scales: {
             y: {
               beginAtZero: true,
+              title: {
+                display: true,
+                text: '銷售額 (RM)'
+              },
               ticks: {
                 callback: function(value) {
                   return 'RM ' + value.toLocaleString();
                 }
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: '月份'
               }
             }
           }
@@ -758,16 +821,16 @@
       // Render KPIs
       kpiGrid.innerHTML = `
         <div class="kpi-card">
-          <div class="kpi-value">RM ${totalSales.toLocaleString()}</div>
-          <div class="kpi-label">總銷售額</div>
+          <div class="kpi-value">${formatMoney(totalSales)}</div>
+          <div class="kpi-label">總銷售額<span class="unit-label">(RM)</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-value">RM ${Math.round(avgSales).toLocaleString()}</div>
-          <div class="kpi-label">月均銷售</div>
+          <div class="kpi-value">${formatMoney(avgSales)}</div>
+          <div class="kpi-label">月均銷售<span class="unit-label">(RM/月)</span></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-value" style="color: ${salesChange >= 0 ? '#10b981' : '#ef4444'}">${salesChange >= 0 ? '+' : ''}${salesChange.toFixed(1)}%</div>
-          <div class="kpi-label">環比變化</div>
+          <div class="kpi-value" style="color: ${salesChange >= 0 ? '#10b981' : '#ef4444'}">${formatPercentage(salesChange)}</div>
+          <div class="kpi-label">環比變化<span class="unit-label">(%)</span></div>
         </div>
       `;
       
@@ -801,7 +864,7 @@
         data: {
           labels: storeData.map(d => d.month),
           datasets: [{
-            label: '銷售額',
+            label: '銷售額 (RM)',
             data: storeData.map(d => d.sales),
             borderColor: '#667eea',
             backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -813,15 +876,32 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return '銷售額: ' + formatMoney(context.parsed.y);
+                }
+              }
+            }
           },
           scales: {
             y: {
               beginAtZero: true,
+              title: {
+                display: true,
+                text: '銷售額 (RM)'
+              },
               ticks: {
                 callback: function(value) {
                   return 'RM ' + value.toLocaleString();
                 }
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: '月份'
               }
             }
           }
@@ -840,7 +920,7 @@
         data: {
           labels: labels,
           datasets: [{
-            label: '2026年',
+            label: '銷售額 (RM)',
             data: data,
             backgroundColor: '#667eea'
           }]
@@ -848,13 +928,32 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return '銷售額: ' + formatMoney(context.parsed.y);
+                }
+              }
+            }
+          },
           scales: {
             y: {
               beginAtZero: true,
+              title: {
+                display: true,
+                text: '銷售額 (RM)'
+              },
               ticks: {
                 callback: function(value) {
                   return 'RM ' + value.toLocaleString();
                 }
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: '月份'
               }
             }
           }
