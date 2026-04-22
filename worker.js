@@ -482,7 +482,7 @@ const INDEX_HTML = `<!DOCTYPE html>
     // Configuration
     const CONFIG = {
       OPENBI_INDEX_URL: 'https://docs.google.com/spreadsheets/d/1Gu-Z1V_3sfOE6pWIGd8Hlg--RfWkBlLhDikQmU1g1Pk/export?format=csv',
-      CRM_GAS_URL: 'https://script.google.com/macros/s/AKfycbxTK15E-OaP_E3ABvwPl6OOdt6wIYMOy4FBynqtQlkyi5P-uUgaQH3W_j8NQ3QcOq__qQ/exec',
+      CRM_GAS_URL: 'https://script.google.com/macros/s/AKfycbzoSGH19_O1Lcfp5OOmQhgHJWd6i6IT43k_TV7GuLA9at0XPLxA-bPYtlOGv4ukE5KN/exec',
       API_KEY: 'a8K3mP9vQ2wR5tY7'
     };
     
