@@ -207,10 +207,20 @@ const INDEX_HTML = `<!DOCTYPE html>
       cursor: pointer;
       min-width: 120px;
     }
-    .time-range-selector {
+    .time-range-selector,
+    .trend-selector {
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+    .trend-selector select {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      font-size: 14px;
+      cursor: pointer;
+      min-width: 100px;
     }
     .kpi-grid {
       display: grid;
@@ -386,7 +396,15 @@ const INDEX_HTML = `<!DOCTYPE html>
         <!-- Charts -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">月度銷售趨勢</div>
+            <div class="card-title" id="trendChartTitle">月度銷售趨勢</div>
+            <div class="trend-selector">
+              <select id="yearSelect" onchange="onYearChange()">
+                <option value="all">所有年份</option>
+              </select>
+              <select id="monthSelect" onchange="onTrendMonthChange()" style="display:none;">
+                <option value="all">所有月份</option>
+              </select>
+            </div>
           </div>
           <div class="chart-container">
             <canvas id="openbiChart"></canvas>
@@ -464,7 +482,7 @@ const INDEX_HTML = `<!DOCTYPE html>
     // Configuration
     const CONFIG = {
       OPENBI_INDEX_URL: 'https://docs.google.com/spreadsheets/d/1Gu-Z1V_3sfOE6pWIGd8Hlg--RfWkBlLhDikQmU1g1Pk/export?format=csv',
-      CRM_GAS_URL: 'https://script.google.com/macros/s/AKfycbx1UigsYc4frBMlqE0L5a-PaIOs5kTGzxaXqt-cniv8_3qIVH_N24swId6y-aZeVLCUcg/exec',
+      CRM_GAS_URL: 'https://script.google.com/macros/s/AKfycbxTK15E-OaP_E3ABvwPl6OOdt6wIYMOy4FBynqtQlkyi5P-uUgaQH3W_j8NQ3QcOq__qQ/exec',
       API_KEY: 'a8K3mP9vQ2wR5tY7'
     };
     
@@ -485,6 +503,8 @@ const INDEX_HTML = `<!DOCTYPE html>
     let globalData = null;
     let currentStore = 'all';
     let currentTimeRange = 'month';
+    let selectedYear = 'all';
+    let selectedTrendMonth = 'all';
     
     function formatMoney(amount) {
       if (!amount || isNaN(amount)) return 'RM 0';
@@ -633,6 +653,71 @@ const INDEX_HTML = `<!DOCTYPE html>
       }
     }
     
+    // 年份選擇變更
+    function onYearChange() {
+      selectedYear = document.getElementById('yearSelect').value;
+      selectedTrendMonth = 'all';
+      document.getElementById('monthSelect').value = 'all';
+      
+      // 如果只選特定年份，顯示月份選擇器
+      const monthSelect = document.getElementById('monthSelect');
+      if (selectedYear === 'all') {
+        monthSelect.style.display = 'none';
+        document.getElementById('trendChartTitle').textContent = '月度銷售趨勢';
+      } else {
+        monthSelect.style.display = 'inline-block';
+        updateMonthSelect(selectedYear);
+        document.getElementById('trendChartTitle').textContent = selectedYear + '年 每日銷售';
+      }
+      
+      if (globalData) {
+        renderOpenBICharts(globalData.months, globalData.stores);
+      }
+    }
+    
+    // 月份選擇變更（趨勢圖用）
+    function onTrendMonthChange() {
+      selectedTrendMonth = document.getElementById('monthSelect').value;
+      
+      if (selectedTrendMonth === 'all') {
+        document.getElementById('trendChartTitle').textContent = selectedYear + '年 月度銷售';
+      } else {
+        document.getElementById('trendChartTitle').textContent = selectedYear + '年 ' + selectedTrendMonth + '月 每日銷售';
+      }
+      
+      if (globalData) {
+        renderOpenBICharts(globalData.months, globalData.stores);
+      }
+    }
+    
+    // 更新年份選擇器
+    function updateYearSelect(months) {
+      const yearSelect = document.getElementById('yearSelect');
+      const years = [...new Set(months.map(m => m.year))].sort();
+      
+      yearSelect.innerHTML = '<option value="all">所有年份</option>';
+      years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year + '年';
+        yearSelect.appendChild(option);
+      });
+    }
+    
+    // 更新月份選擇器
+    function updateMonthSelect(year) {
+      const monthSelect = document.getElementById('monthSelect');
+      const months = globalData.months.filter(m => m.year === year);
+      
+      monthSelect.innerHTML = '<option value="all">所有月份</option>';
+      months.forEach(m => {
+        const option = document.createElement('option');
+        option.value = m.month;
+        option.textContent = m.month;
+        monthSelect.appendChild(option);
+      });
+    }
+    
     // 渲染 Dashboard
     function renderDashboard(data) {
       let grandTotal = 0;
@@ -721,6 +806,9 @@ const INDEX_HTML = `<!DOCTYPE html>
         // 更新門店選擇器
         updateStoreSelector(storeTotals);
         
+        // 更新年份選擇器
+        updateYearSelect(monthData);
+        
         // 渲染 Dashboard
         renderDashboard(globalData);
         
@@ -744,6 +832,31 @@ const INDEX_HTML = `<!DOCTYPE html>
         }
       } catch (e) {
         console.log('No existing charts to destroy');
+      }
+      
+      // 決定趨勢圖的數據和類型
+      let trendLabels = [];
+      let trendData = [];
+      let trendLabel = '銷售額 (RM)';
+      
+      if (selectedYear === 'all') {
+        // 顯示所有年份的月度趨勢
+        trendLabels = months.map(m => m.year + '-' + m.month);
+        trendData = months.map(m => m.total);
+      } else if (selectedTrendMonth === 'all') {
+        // 顯示特定年份的所有月份
+        const yearMonths = months.filter(m => m.year === selectedYear);
+        trendLabels = yearMonths.map(m => m.month);
+        trendData = yearMonths.map(m => m.total);
+      } else {
+        // 顯示特定年月的每日數據
+        const monthData = months.find(m => m.year === selectedYear && m.month === selectedTrendMonth);
+        if (monthData && monthData.dailyData) {
+          // 只取前31天（過濾掉無效日期）
+          const validDays = monthData.dailyData.slice(0, 31);
+          trendLabels = validDays.map((d, i) => (i + 1).toString());
+          trendData = validDays.map(d => d.total);
+        }
       }
       
       // 計算各時間範圍的真實數據
@@ -821,15 +934,15 @@ const INDEX_HTML = `<!DOCTYPE html>
       
       const timeRangeValues = calculateTimeRangeValues();
       
-      // 月度趨勢圖 - Line Chart
+      // 趨勢圖 - Line Chart
       const ctx = document.getElementById('openbiChart').getContext('2d');
       window.openbiChart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: months.map(d => d.month),
+          labels: trendLabels,
           datasets: [{ 
-            label: '銷售額 (RM)', 
-            data: months.map(d => d.total), 
+            label: trendLabel, 
+            data: trendData, 
             borderColor: '#6366f1',
             backgroundColor: 'rgba(99, 102, 241, 0.1)',
             borderWidth: 3,

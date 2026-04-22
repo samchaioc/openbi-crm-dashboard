@@ -434,7 +434,7 @@
       OPENBI_INDEX_URL: 'https://docs.google.com/spreadsheets/d/1Gu-Z1V_3sfOE6pWIGd8Hlg--RfWkBlLhDikQmU1g1Pk/export?format=csv',
       
       // CRM - Google Apps Script
-      CRM_GAS_URL: 'https://script.google.com/macros/s/AKfycbx1UigsYc4frBMlqE0L5a-PaIOs5kTGzxaXqt-cniv8_3qIVH_N24swId6y-aZeVLCUcg/exec',
+      CRM_GAS_URL: 'https://script.google.com/macros/s/AKfycbxTK15E-OaP_E3ABvwPl6OOdt6wIYMOy4FBynqtQlkyi5P-uUgaQH3W_j8NQ3QcOq__qQ/exec',
       
       API_KEY: 'a8K3mP9vQ2wR5tY7'
     };
@@ -737,12 +737,12 @@
         const data = await response.json();
         
         if (data.success) {
-          document.getElementById('crm-policies').innerHTML = formatNumber(data.totalPolicies) + '<span class="kpi-unit"> 張</span>';
-          document.getElementById('crm-clients').innerHTML = formatNumber(data.totalClients) + '<span class="kpi-unit"> 人</span>';
-          document.getElementById('crm-premium').innerHTML = formatMoney(data.totalPremium) + '<span class="kpi-unit"> RM</span>';
+          document.getElementById('crm-policies').innerHTML = formatNumber(data.totalPolicies || 0) + '<span class="kpi-unit"> 張</span>';
+          document.getElementById('crm-clients').innerHTML = formatNumber(data.totalClients || 0) + '<span class="kpi-unit"> 人</span>';
+          document.getElementById('crm-premium').innerHTML = formatMoney(data.totalPremium || 0) + '<span class="kpi-unit"> RM</span>';
           document.getElementById('crm-new').innerHTML = '0<span class="kpi-unit"> 張</span>';
           
-          // Load recent policies
+          // Load customer list
           await loadCRMTable();
         } else {
           showCRMEmpty();
@@ -755,37 +755,44 @@
     
     async function loadCRMTable() {
       try {
-        const response = await fetch(CONFIG.CRM_GAS_URL + '?action=list&limit=5&key=' + CONFIG.API_KEY);
+        const response = await fetch(CONFIG.CRM_GAS_URL + '?action=clients&key=' + CONFIG.API_KEY);
         const data = await response.json();
         
         const container = document.getElementById('crm-table-container');
         
-        if (!data.success || !data.policies || data.policies.length === 0) {
+        if (!data.success || !data.clients || data.clients.length === 0) {
           container.innerHTML = `
             <div class="empty-state">
               <div class="empty-state-icon">📋</div>
-              <div>暫無保單記錄</div>
+              <div>暫無客戶記錄</div>
             </div>
           `;
           return;
         }
         
-        // Render table
+        // Render customer table
         let html = '<table style="width: 100%; border-collapse: collapse;"><thead><tr style="border-bottom: 2px solid var(--border-color);">';
-        html += '<th style="text-align: left; padding: 12px;">客戶</th>';
+        html += '<th style="text-align: left; padding: 12px;">客戶名稱</th>';
+        html += '<th style="text-align: left; padding: 12px;">IC Number</th>';
+        html += '<th style="text-align: left; padding: 12px;">保險公司</th>';
         html += '<th style="text-align: left; padding: 12px;">保單號</th>';
-        html += '<th style="text-align: right; padding: 12px;">保費</th>';
+        html += '<th style="text-align: left; padding: 12px;">時間</th>';
         html += '</tr></thead><tbody>';
         
-        data.policies.forEach(p => {
+        data.clients.forEach(c => {
+          const statusColor = c.status === 'Active' ? '#22c55e' : '#ef4444';
+          const sheetLink = c.sheetUrl ? `<a href="${c.sheetUrl}" target="_blank" style="color: #6366f1;">開啟</a>` : '-';
           html += `<tr style="border-bottom: 1px solid var(--border-color);">`;
-          html += `<td style="padding: 12px;">${p.clientName || '-'}</td>`;
-          html += `<td style="padding: 12px;">${p.policyNumber || '-'}</td>`;
-          html += `<td style="text-align: right; padding: 12px;">RM ${p.premiumAmount || '0'}</td>`;
+          html += `<td style="padding: 12px;">${c.clientName || '-'}</td>`;
+          html += `<td style="padding: 12px;">${c.icNumber || '-'}</td>`;
+          html += `<td style="padding: 12px;">${c.insuranceCompany || '-'}</td>`;
+          html += `<td style="padding: 12px;">${c.policyNumber || '-'}</td>`;
+          html += `<td style="padding: 12px;">${c.timestamp || '-'}</td>`;
           html += `</tr>`;
         });
         
         html += '</tbody></table>';
+        html += `<div style="margin-top: 12px; color: #6b7280; font-size: 14px;">共 ${data.clients.length} 位客戶</div>`;
         container.innerHTML = html;
         
       } catch (error) {
